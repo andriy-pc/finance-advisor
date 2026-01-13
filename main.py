@@ -1,8 +1,9 @@
 from fastapi import FastAPI
 
 from advisor.api.v1.api import router
+from advisor.lifespan import lifespan
 
-app = FastAPI(title="Job Advisor - Personal Finance Engine")
+app = FastAPI(title="Finance Advisor - Personal Finance Engine", lifespan=lifespan)
 
 app.include_router(router)
 
