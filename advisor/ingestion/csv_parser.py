@@ -10,23 +10,20 @@ from advisor.db.db_models import RawTransaction
 from advisor.ingestion.base_parser import BaseParser
 from advisor.models import TransactionType
 
+DEFAULT_CURRENCY = "USD"
+
 logger = logging.getLogger(__name__)
 
 
 class CSVParser(BaseParser):
 
     def parse_transactions(self, file_content: BinaryIO, filename: str, user_id: int) -> List[RawTransaction]:
-        # Decode bytes to string
         content_str = file_content.read().decode("utf-8")
         in_memory_file = io.StringIO(content_str)
         reader = csv.DictReader(in_memory_file)
 
         transactions = []
         for row in reader:
-            # Basic normalization logic (can be improved with config)
-            # Expecting columns like 'Date', 'Amount', 'Description', 'Category'
-
-            # Simple heuristic mapping
             date_str = row.get("Date") or row.get("date")
             amount_str = row.get("Amount") or row.get("amount")
             description = row.get("Description") or row.get("description") or row.get("Memo") or ""
@@ -37,20 +34,15 @@ class CSVParser(BaseParser):
                 continue
 
             try:
-                dt = (
+                transaction_date = (
                     datetime.fromisoformat(date_str).date()
                     if "-" in date_str
                     else datetime.strptime(date_str, "%m/%d/%Y").date()
                 )
                 amount_value = Decimal(amount_str)
-
-                # Determine transaction type based on amount sign
                 transaction_type = TransactionType.DEBIT if amount_value < 0 else TransactionType.CREDIT
-
-                # Store absolute value
                 absolute_amount = abs(amount_value)
 
-                # Store the entire row as raw_data
                 raw_data: dict[str, Any] = dict(row)
 
                 transaction = RawTransaction(
@@ -60,8 +52,8 @@ class CSVParser(BaseParser):
                     description=description,
                     raw_category=raw_category,
                     amount=absolute_amount,
-                    currency="USD",  # Default currency
-                    date=dt,
+                    currency=DEFAULT_CURRENCY,
+                    date=transaction_date,
                     user_id=user_id,
                     raw_data=raw_data,
                 )

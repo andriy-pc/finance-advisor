@@ -10,7 +10,6 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Index,
-    Integer,
     JSON,
     Numeric,
     String,
@@ -24,29 +23,8 @@ from advisor.models import (
     BudgedThresholdSourceEnum,
     PeriodEnum,
     RecurrenceStatus,
-    SpendingType,
     TransactionType,
 )
-import json
-
-class SQLiteJSON(JSON):
-    """Custom JSON type for SQLite to handle list of dicts correctly."""
-    def result_processor(self, dialect, coltype):
-        def process(value):
-            if value is None:
-                return None
-            if isinstance(value, str):
-                return json.loads(value)
-            return value
-        return process
-
-    def bind_processor(self, dialect):
-        def process(value):
-            if value is None:
-                return None
-            return json.dumps(value)
-        return process
-
 
 class Base(DeclarativeBase):
     """Base class for all database models."""
@@ -69,11 +47,9 @@ class Base(DeclarativeBase):
 
 
 class User(Base):
-    """User model for multi-user support."""
-
     __tablename__ = "USER"
 
-    id: Mapped[int] = mapped_column(Integer(), primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(BigInteger(), primary_key=True, autoincrement=True)
     external_id: Mapped[str] = mapped_column(UUID(as_uuid=True), default=uuid4, unique=True, nullable=False)
 
     # User profile
@@ -113,11 +89,9 @@ class User(Base):
 
 
 class Category(Base):
-    """Category model for transaction categorization."""
-
     __tablename__ = "CATEGORY"
 
-    id: Mapped[int] = mapped_column(Integer(), primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(BigInteger(), primary_key=True, autoincrement=True)
     external_id: Mapped[str] = mapped_column(UUID(as_uuid=True), default=uuid4, unique=True, nullable=False)
 
     # Category details
@@ -147,7 +121,7 @@ class RawTransaction(Base):
 
     __tablename__ = "RAW_TRANSACTION"
 
-    id: Mapped[int] = mapped_column(Integer(), primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(BigInteger(), primary_key=True, autoincrement=True)
     external_id: Mapped[str] = mapped_column(UUID(as_uuid=True), default=uuid4, unique=True, nullable=False)
 
     # Transaction details
@@ -164,7 +138,7 @@ class RawTransaction(Base):
     user: Mapped["User"] = relationship(back_populates="raw_transactions")
 
     # Flexible storage for original data
-    raw_data: Mapped[dict[str, Any]] = mapped_column(SQLiteJSON, default=dict, nullable=False)
+    raw_data: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict, nullable=False)
 
     # Timestamps
     created_at: Mapped[datetime] = mapped_column(
@@ -182,7 +156,7 @@ class NormalizedTransaction(Base):
 
     __tablename__ = "NORMALIZED_TRANSACTION"
 
-    id: Mapped[int] = mapped_column(Integer(), primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(BigInteger(), primary_key=True, autoincrement=True)
     external_id: Mapped[str] = mapped_column(UUID(as_uuid=True), default=uuid4, unique=True, nullable=False)
 
     # Transaction details
@@ -237,11 +211,9 @@ class NormalizedTransaction(Base):
 
 
 class BudgetThreshold(Base):
-    """Budget threshold for spending limits per category."""
-
     __tablename__ = "BUDGET_THRESHOLD"
 
-    id: Mapped[int] = mapped_column(Integer(), primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(BigInteger(), primary_key=True, autoincrement=True)
     external_id: Mapped[str] = mapped_column(UUID(as_uuid=True), default=uuid4, unique=True, nullable=False)
 
     # Budget details
@@ -280,11 +252,9 @@ class BudgetThreshold(Base):
 
 
 class FinancialPeriodSnapshot(Base):
-    """Snapshot of financial state for a given period."""
-
     __tablename__ = "FINANCIAL_PERIOD_SNAPSHOT"
 
-    id: Mapped[int] = mapped_column(Integer(), primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(BigInteger(), primary_key=True, autoincrement=True)
     external_id: Mapped[str] = mapped_column(UUID(as_uuid=True), default=uuid4, unique=True, nullable=False)
 
     # Period details
@@ -301,8 +271,8 @@ class FinancialPeriodSnapshot(Base):
     )  # savings / total_income
 
     # Aggregated data stored as JSON
-    category_spend: Mapped[list[dict[str, Any]]] = mapped_column(SQLiteJSON, default=list, nullable=False)
-    budget_status: Mapped[list[dict[str, Any]]] = mapped_column(SQLiteJSON, default=list, nullable=False)
+    category_spend: Mapped[list[dict[str, Any]]] = mapped_column(JSON, default=list, nullable=False)
+    budget_status: Mapped[list[dict[str, Any]]] = mapped_column(JSON, default=list, nullable=False)
 
     # User relationship
     user_id: Mapped[int] = mapped_column(ForeignKey("USER.id"), nullable=False, index=True)

@@ -49,10 +49,8 @@ async def bulk_upload_transactions(
     if not file.filename:
         raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail="Filename is missing")
 
-    # Get user_id
     user_id = extract_user_id()
 
-    # Get appropriate parser
     try:
         parser = ParserFactory.get_parser(file.filename)
     except ValueError as e:
@@ -60,7 +58,6 @@ async def bulk_upload_transactions(
             status_code=HTTPStatus.BAD_REQUEST, detail="Unsupported file type. Only CSV files are supported."
         ) from e
 
-    # Parse transactions
     try:
         transactions = parser.parse_transactions(file.file, file.filename, user_id)
     except Exception as e:
@@ -71,7 +68,6 @@ async def bulk_upload_transactions(
     if not transactions:
         raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail="No valid transactions found in the file")
 
-    # Store transactions in database using transaction context manager
     try:
         async with db_session.begin():
             db_session.add_all(transactions)
