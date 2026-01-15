@@ -1,12 +1,13 @@
+import asyncio
 import logging
 from logging.config import fileConfig
-from typing import Any
 
-# do not delete this import since it's an initialization of the models from metric normalization rules
 from alembic import context
-from sqlalchemy import create_engine
+from sqlalchemy.ext.asyncio import create_async_engine
 
 from advisor.db.db_models import Base
+
+STACK_ID_NAME = "APM_RCI_AGENT"
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -16,11 +17,6 @@ config = context.config
 # This line sets up loggers basically.
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
-
-# add your model's MetaData object here
-# for 'autogenerate' support
-# from myapp import mymodel
-# target_metadata = mymodel.Base.metadata
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -34,7 +30,7 @@ logger.info(f"SQL alchemy tables: {Base.metadata.tables.keys()}")
 # ... etc.
 
 
-def include_object(object: Any, name: str, type_: str, reflected: bool, compare_to: Any) -> bool:
+def include_object(object, name, type_, reflected, compare_to):
     """Method to allow alembic work only with databases in this project"""
 
     # Allow only databases from Base
@@ -56,22 +52,19 @@ def include_object(object: Any, name: str, type_: str, reflected: bool, compare_
 
 def run_migrations_offline() -> None:
     url = config.get_main_option("sqlalchemy.url")
-    if not url:
-        raise ValueError("sqlalchemy.url is not set in alembic.ini")
     context.configure(
         url=url,
         target_metadata=Base.metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
-        include_object=include_object,  # type: ignore
-        version_table="ALEMBIC_FINANCE_ADVISOR_MIGRATIONS",
+        include_object=include_object,
     )
 
     with context.begin_transaction():
         context.run_migrations()
 
 
-def run_migrations_online() -> None:
+async def run_migrations_online() -> None:
     """Run migrations in 'online' mode.
 
     In this scenario we need to create an Engine
@@ -79,25 +72,26 @@ def run_migrations_online() -> None:
 
     """
     url = config.get_main_option("sqlalchemy.url")
-    if not url:
-        raise ValueError("sqlalchemy.url is not set in alembic.ini")
-    connectable = create_engine(url)
+    connectable = create_async_engine(url)
 
-    with connectable.connect() as connection:
-        context.configure(
-            connection=connection,
-            target_metadata=Base.metadata,
-            include_object=include_object,  # type: ignore
-            compare_type=True,
-            version_table="ALEMBIC_FINANCE_ADVISOR_MIGRATIONS",
-        )
+    async with connectable.connect() as connection:
+        await connection.run_sync(do_run_migrations)
+
+    await connectable.dispose()
+
+
+def do_run_migrations(connection):
+    context.configure(
+        connection=connection,
+        target_metadata=Base.metadata,
+        include_object=include_object,
+        compare_type=True,
+    )
     with context.begin_transaction():
         context.run_migrations()
-
-    connectable.dispose()
 
 
 if context.is_offline_mode():
     run_migrations_offline()
 else:
-    run_migrations_online()
+    asyncio.run(run_migrations_online())

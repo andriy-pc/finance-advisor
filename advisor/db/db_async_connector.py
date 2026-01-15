@@ -36,7 +36,7 @@ class DBAsyncConnector:
         logger.info("creating async engine")
         self._async_engine = create_async_engine(
             self._db_uri,
-            connect_args={"init_command": "SET SESSION time_zone='+00:00'"},
+            connect_args={"server_settings": {"timezone": "UTC"}},
             pool_size=sql_settings.pool_size,
             max_overflow=sql_settings.max_overflow,
             pool_recycle=sql_settings.pool_recycle,

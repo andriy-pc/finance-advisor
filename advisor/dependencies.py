@@ -1,4 +1,3 @@
-from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -29,7 +28,6 @@ def get_db_connector() -> DBAsyncConnector:
     return db_connector
 
 
-@asynccontextmanager
 async def get_session() -> AsyncGenerator[AsyncSession, None]:
     async with get_db_connector().get_session() as session:
         yield session

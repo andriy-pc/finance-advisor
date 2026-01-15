@@ -6,12 +6,14 @@ from pydantic import BaseModel, Field
 
 class TransactionType(str, Enum):
     """Type of financial transaction."""
+
     DEBIT = "debit"  # Outcome
     CREDIT = "credit"  # Income
 
 
 class SpendingType(str, Enum):
     """Classification of spending pattern."""
+
     RECURRING = "recurring"
     DISCRETIONARY = "discretionary"
 

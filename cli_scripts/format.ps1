@@ -17,7 +17,7 @@ if (Test-Path $VenvActivate) {
 $CheckArgs = $args
 
 # isort
-isort `
+python -m isort `
     --quiet `
     --settings "$ProjectRoot\pyproject.toml" `
     --skip "$ProjectRoot\.cache" `
@@ -26,12 +26,12 @@ isort `
     "$ProjectRoot"
 
 # black
-black `
+python -m black `
     @CheckArgs `
     "$ProjectRoot"
 
 # mypy
-mypy `
+python -m mypy `
     --config-file "$ProjectRoot\pyproject.toml" `
     --cache-dir "$ProjectRoot\.mypy_cache" `
     "$ProjectRoot"

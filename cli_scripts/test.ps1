@@ -33,7 +33,7 @@ foreach ($arg in $args) {
 
 Write-Host "`nRunning tests"
 Push-Location $ProjectRoot
-pytest tests -svv `
+python -m pytest tests -svv `
     --disable-warnings `
     --cov-fail-under=$MinCoverage `
     --cov="$ProjectRoot" `
@@ -42,10 +42,10 @@ Pop-Location
 
 Write-Host "`nXML coverage report"
 Push-Location $ProjectRoot
-coverage xml
+python -m coverage xml
 Pop-Location
 
 Write-Host "`nHTML coverage report"
 Push-Location $ProjectRoot
-coverage html
+python -m coverage html
 Pop-Location
