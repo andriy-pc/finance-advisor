@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 
-from advisor.settings import SQLSettings
+from advisor.settings import DBEngineSettings
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +24,7 @@ class DBAsyncConnector:
     @asynccontextmanager
     async def generate_engine(
         self,
-        custom_settings: SQLSettings | None = None,
+        custom_settings: DBEngineSettings | None = None,
     ) -> AsyncGenerator[None, None]:
         """Creates async engine.
 
@@ -32,14 +32,14 @@ class DBAsyncConnector:
         async with generate_async_engine():
             async with get_async_session() as session: ...
         """
-        sql_settings = custom_settings or SQLSettings()
+        db_engine_settings = custom_settings or DBEngineSettings()
         logger.info("creating async engine")
         self._async_engine = create_async_engine(
             self._db_uri,
             connect_args={"server_settings": {"timezone": "UTC"}},
-            pool_size=sql_settings.pool_size,
-            max_overflow=sql_settings.max_overflow,
-            pool_recycle=sql_settings.pool_recycle,
+            pool_size=db_engine_settings.pool_size,
+            max_overflow=db_engine_settings.max_overflow,
+            pool_recycle=db_engine_settings.pool_recycle,
             echo=False,
         )
         self._async_session = async_sessionmaker(self._async_engine)
