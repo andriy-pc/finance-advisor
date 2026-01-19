@@ -1,5 +1,7 @@
 import datetime
 from enum import Enum
+from typing import Any
+from uuid import UUID
 
 from pydantic import BaseModel, Field
 
@@ -41,14 +43,17 @@ class CategoryPrediction(BaseModel):
 
 
 class RawTransaction(BaseModel):
-    id: str
-    source: str  # bank_name / csv / manual
+    id: int
+    external_id: UUID | None = None
     type: TransactionType
-    description: str  # merchant + memo as-is
-    category: str | None  # category provided by source
-    amount: float
-    currency: str
-    date: datetime.date
+    amount: float | None = None
+    date: datetime.date | None = None
+    currency: str | None
+    description: str | None = None
+    source: str  # CSV / manual / bank
+    raw_category: str | None
+    user_id: int | None = None
+    raw_data: dict[str, Any]
 
 
 class NormalizedTransaction(BaseModel):

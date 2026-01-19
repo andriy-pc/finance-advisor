@@ -35,7 +35,7 @@ class Base(DeclarativeBase):
         result = {}
         for column in self.__table__.columns:
             value = getattr(self, column.name)
-            result[column.name] = value.value if isinstance(value, SQLEnum) else value  # type: ignore
+            result[column.name] = value  # type: ignore
         return result
 
     def __eq__(self, other: object) -> bool:
