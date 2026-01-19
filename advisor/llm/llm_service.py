@@ -108,7 +108,7 @@ class LLMService:
 
             raise
 
-    async def invoke_raw(self, prompt_key: str, variables: dict[str, Any], system_message: str | None = None) -> str:
+    async def invoke_raw(self, prompt_key: str, variables: dict[str, Any] = {}, system_message: str | None = None) -> str:
         """
         Invoke LLM and return raw string response.
 

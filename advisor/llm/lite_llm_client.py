@@ -34,6 +34,7 @@ class LiteLLMClient:
         self.config = settings
         self._setup_litellm()
         self._instructor_client = instructor.from_litellm(acompletion)
+        self.schema_validation_max_retries = settings.schema_validation_max_retries
 
     def _setup_litellm(self) -> None:
         """Configure LiteLLM global settings and API keys."""
@@ -88,7 +89,7 @@ class LiteLLMClient:
         params = self._build_params(messages, **kwargs)
         params["response_model"] = response_model
 
-        return await self._instructor_client.chat.completions.create(**params)
+        return await self._instructor_client.chat.completions.create(**params, max_retries=self.schema_validation_max_retries)
 
     async def complete_streaming(self, messages: List[dict[str, str]], callback: Callable, **kwargs) -> None:
         """
@@ -120,11 +121,10 @@ class LiteLLMClient:
             Complete parameter dict for LiteLLM
         """
         params = {
-            "model": self.config.to_litellm_model(),
+            "model": self.config.to_litellm_model_name(),
             "messages": messages,
             "temperature": self.config.temperature,
             "timeout": self.config.timeout,
-            **self.config.additional_kwargs,
             **kwargs,
         }
 

@@ -1,4 +1,4 @@
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from advisor.constants import LLMProvider
 
@@ -15,6 +15,12 @@ class LLMSettings(BaseSettings):
     temperature: float | None = None
     api_key: str | None = None
     base_url: str | None = None
+    max_tokens: int | None = None
+    timeout: int | None = None
+
+    # to configure `instructor`'s max_retries
+    # `instructor` resends prompts to LLM: https://python.useinstructor.com/learning/validation/retry_mechanisms/#retry-limitations
+    schema_validation_max_retries: int | None = None
 
     def to_litellm_model_name(self) -> str:
         """
@@ -30,14 +36,13 @@ class LLMSettings(BaseSettings):
             return self.model_name  # Anthropic models don't need prefix
         return self.model_name
 
-    class Config:
-        env_file = ".env"
-
 
 class ProjectSettings(BaseSettings):
     sql_connection_url: str | None = None
 
-    llm_integration_settings: LLMSettings
+    llm_integration_settings: LLMSettings | None = None
 
-    class Config:
-        env_file = ".env"
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_nested_delimiter="__",
+    )

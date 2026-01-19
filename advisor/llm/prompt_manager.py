@@ -26,7 +26,7 @@ class PromptManager:
 
         # Determine prompts directory path
         if prompts_dir is None:
-            project_root = Path(__file__).resolve().parent.parent
+            project_root = Path(__file__).resolve().parent.parent.parent
             self.prompts_dir = project_root / "prompts"
         else:
             self.prompts_dir = Path(prompts_dir)
