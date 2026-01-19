@@ -4,18 +4,18 @@ from typing import Any, Optional
 from uuid import uuid4
 
 from sqlalchemy import (
+    JSON,
     BigInteger,
     Boolean,
     Date,
     DateTime,
+    Enum,
     ForeignKey,
     Index,
-    JSON,
     Numeric,
     String,
     Text,
 )
-from sqlalchemy import Enum
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy.types import UUID
 
@@ -25,6 +25,7 @@ from advisor.models import (
     RecurrenceStatus,
     TransactionType,
 )
+
 
 class Base(DeclarativeBase):
     """Base class for all database models."""

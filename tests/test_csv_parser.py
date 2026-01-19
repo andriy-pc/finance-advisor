@@ -37,5 +37,3 @@ class TestCSVParser(unittest.TestCase):
 
         self.assertEqual(len(transactions), 1)
         self.assertEqual(transactions[0].description, "Valid Row")
-
-

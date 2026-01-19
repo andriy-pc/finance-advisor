@@ -6,6 +6,8 @@ A constraint-based financial decision system built as a multi-user web applicati
 This project is a **Personal Finance Decision Engine** designed to evaluate user financial actions against explicit
 constraints and goals.
 
+The project separates orchestration from transport. LiteLLM is used as a vendor-neutral LLM gateway, while business services remain provider-agnostic
+
 It is **not** an autonomous AI agent that acts on its own.
 It does **not** make decisions independently, execute transactions, or invent goals.
 

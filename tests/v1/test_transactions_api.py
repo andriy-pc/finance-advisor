@@ -2,13 +2,13 @@ import os
 import unittest
 from http import HTTPStatus
 
-from sqlalchemy import select
 from fastapi.testclient import TestClient
+from sqlalchemy import select
 
 from advisor.db.db_models import Base, RawTransaction
 from advisor.dependencies import get_session
-from db_test_helper import DBTestHelper
 from main import app
+from tests.db_test_helper import DBTestHelper
 
 
 class TestTransactionsAPI(unittest.IsolatedAsyncioTestCase):
@@ -32,8 +32,7 @@ class TestTransactionsAPI(unittest.IsolatedAsyncioTestCase):
 
                 # ACT
                 response = self.client.post(
-                    "/api/v1/transactions/bulk",
-                    files={"file": ("valid_transactions.csv", f, "text/csv")}
+                    "/api/v1/transactions/bulk", files={"file": ("valid_transactions.csv", f, "text/csv")}
                 )
 
             # ASSERT
@@ -58,8 +57,7 @@ class TestTransactionsAPI(unittest.IsolatedAsyncioTestCase):
 
             # ACT
             response = self.client.post(
-                "/api/v1/transactions/bulk",
-                files={"file": ("test.txt", b"some text", "text/plain")}
+                "/api/v1/transactions/bulk", files={"file": ("test.txt", b"some text", "text/plain")}
             )
 
             # ASSERT
@@ -74,8 +72,7 @@ class TestTransactionsAPI(unittest.IsolatedAsyncioTestCase):
             with open(csv_path, "rb") as f:
                 # ACT
                 response = self.client.post(
-                    "/api/v1/transactions/bulk",
-                    files={"file": ("invalid_no_required_columns.csv", f, "text/csv")}
+                    "/api/v1/transactions/bulk", files={"file": ("invalid_no_required_columns.csv", f, "text/csv")}
                 )
 
             # ASSERT

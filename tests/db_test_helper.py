@@ -21,7 +21,7 @@ class DBTestHelper:  # pragma: no cover
 
     @asynccontextmanager
     async def generate_in_memory_async_engine(
-            self, orm_base: DeclarativeBase, remove_autoincrement: bool = False
+        self, orm_base: DeclarativeBase, remove_autoincrement: bool = False
     ) -> AsyncGenerator[None, None]:
         if remove_autoincrement:
             self._remove_autoincrement_from_metadata(orm_base.metadata)
@@ -43,9 +43,9 @@ class DBTestHelper:  # pragma: no cover
             await self._in_memory_async_engine.dispose()
 
     async def alter_async_table_to_support_sqlite(
-            self,
-            table_name: str,
-            _override_engine: AsyncEngine,
+        self,
+        table_name: str,
+        _override_engine: AsyncEngine,
     ) -> None:
         metadata = MetaData()
         async with _override_engine.begin() as conn:
