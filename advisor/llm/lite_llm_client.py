@@ -125,6 +125,7 @@ class LiteLLMClient:
             "messages": messages,
             "temperature": self.config.temperature,
             "timeout": self.config.timeout,
+            "reasoning_effort": self.config.reasoning_effort,
             **kwargs,
         }
 

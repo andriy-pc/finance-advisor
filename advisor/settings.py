@@ -17,6 +17,7 @@ class LLMSettings(BaseSettings):
     base_url: str | None = None
     max_tokens: int | None = None
     timeout: int | None = None
+    reasoning_effort: str | None = None
 
     # to configure `instructor`'s max_retries
     # `instructor` resends prompts to LLM: https://python.useinstructor.com/learning/validation/retry_mechanisms/#retry-limitations

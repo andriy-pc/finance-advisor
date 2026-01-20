@@ -1,6 +1,6 @@
 import asyncio
 import time
-from typing import Any, Optional, Type
+from typing import Any, Type
 
 import tiktoken
 

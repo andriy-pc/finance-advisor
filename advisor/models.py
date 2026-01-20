@@ -3,7 +3,7 @@ from enum import Enum
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class TransactionType(str, Enum):
@@ -56,22 +56,51 @@ class RawTransaction(BaseModel):
     raw_data: dict[str, Any]
 
 
+class CategorizationResult(BaseModel):
+    """Result of transaction categorization with confidence score."""
+
+    predicted_category: str = Field(
+        ...,
+        description="Best matching user-defined category, or suggested category with '_MISSING' suffix if no match found"
+    )
+    category_confidence: float = Field(
+        ...,
+        ge=0.0,
+        le=1.0,
+        description="Confidence score for the categorization (0.0 = no confidence, 1.0 = very confident)"
+    )
+    reasoning: str = Field(
+        ...,
+        description="Brief explanation of why this category was chosen and the confidence level"
+    )
+
+    @field_validator('category_confidence')
+    @classmethod
+    def validate_confidence(cls, v: float) -> float:
+        if not 0.0 <= v <= 1.0:
+            raise ValueError('Confidence must be between 0.0 and 1.0')
+        return v
+
+
 class NormalizedTransaction(BaseModel):
-    id: str
+    id: str | None = None
+    external_id: UUID | None = None
+
     type: TransactionType
     amount: float
     date: datetime.date
     currency: str
     description: str | None
     source: str  # CSV / manual / bank
+
     raw_category: str  # taken from the input (CSV / manu
     predicted_category: str
     category_confidence: float  # for category
     resolved_category: str  # resolved with LLM
 
     recurrence_status: RecurrenceStatus
-    recurrence_confidence: float | None
-    recurrence_period: PeriodEnum
+    recurrence_confidence: float | None = None
+    recurrence_period: PeriodEnum | None = None
 
 
 class BudgetThreshold(BaseModel):
