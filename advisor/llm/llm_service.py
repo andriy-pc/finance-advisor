@@ -1,6 +1,6 @@
 import asyncio
 import time
-from typing import Any, Optional, Type
+from typing import Any, Type
 
 import tiktoken
 
@@ -32,13 +32,12 @@ class LLMService:
         self._prompt_manager = prompt_manager
         self._metrics = metrics or MetricsCollector()
 
-    # TODO: ! investigate LLM structure enforcement
     async def invoke_structured(
         self,
         prompt_key: str,
         variables: dict[str, Any],
         response_model: Type[T],
-        system_message: str | None = None,
+        system_prompt_key: str | None = None,
     ) -> T:
         """
         Primary method for type-safe LLM interactions.
@@ -49,7 +48,7 @@ class LLMService:
             prompt_key: Registered prompt identifier
             variables: Template variables
             response_model: Pydantic model for output
-            system_message: Optional system prompt
+            system_prompt_key: Optional system prompt key
 
         Returns:
             Validated Pydantic instance
@@ -67,14 +66,15 @@ class LLMService:
 
         try:
             # Render prompt
+            # TODO: ! validation and rendering do the same job
             self._prompt_manager.validate_variables(prompt_key, variables)
             prompt_text = self._prompt_manager.render(prompt_key, variables)
 
             # Build messages
             messages = []
-            if system_message:
-                # TODO: ! clarify roles
-                messages.append({"role": "system", "content": system_message})
+            if system_prompt_key:
+                system_prompt = self._prompt_manager.render(system_prompt_key, {})
+                messages.append({"role": "system", "content": system_prompt})
             messages.append({"role": "user", "content": prompt_text})
 
             # Invoke with structured output via instructor
@@ -182,7 +182,7 @@ class LLMService:
                     prompt_key=req["prompt_key"],
                     variables=req["variables"],
                     response_model=response_model,
-                    system_message=req.get("system_message"),
+                    system_prompt_key=req.get("system_prompt_key"),
                 )
 
         tasks = [_process_one(req) for req in requests]
