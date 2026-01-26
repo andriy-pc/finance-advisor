@@ -21,7 +21,10 @@ _lite_llm_client: "LiteLLMClient | None" = None
 def get_lite_llm_client() -> "LiteLLMClient":
     global _lite_llm_client
     if _lite_llm_client is None:
-        _lite_llm_client = LiteLLMClient(get_project_settings().llm_integration_settings)
+        llm_settings = get_project_settings().llm_integration_settings
+        if llm_settings is None:
+            raise ValueError("llm_integration_settings is not set")
+        _lite_llm_client = LiteLLMClient(llm_settings)
     return _lite_llm_client
 
 

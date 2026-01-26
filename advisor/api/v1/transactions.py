@@ -110,7 +110,7 @@ async def bulk_categorization(
 
         categorized_transactions = []
         try:
-            categories = []
+            categories: list[str] = []
             for raw_db_transaction in raw_transactions:
                 raw_transaction = transactions_service.map_raw_db_transaction_to_pydantic_model(raw_db_transaction)
                 normalized_model = await transactions_service.normalize_and_categorize(raw_transaction, categories)

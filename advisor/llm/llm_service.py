@@ -82,29 +82,33 @@ class LLMService:
 
             # Record success metrics
             latency_ms = (time.perf_counter() - start_time) * 1000
-            self._metrics.record_call(
-                provider=self._client.config.provider,
-                model=self._client.config.model_name,
-                latency_ms=latency_ms,
-                input_tokens=self._estimate_tokens(prompt_text),
-                output_tokens=self._estimate_tokens(str(result)),
-                success=True,
-            )
+            provider = self._client.config.provider
+            if provider is not None:
+                self._metrics.record_call(
+                    provider=provider,
+                    model=self._client.config.model_name,
+                    latency_ms=latency_ms,
+                    input_tokens=self._estimate_tokens(prompt_text),
+                    output_tokens=self._estimate_tokens(str(result)),
+                    success=True,
+                )
 
             return result
 
         except Exception as e:
             # Record failure
             latency_ms = (time.perf_counter() - start_time) * 1000
-            self._metrics.record_call(
-                provider=self._client.config.provider,
-                model=self._client.config.model_name,
-                latency_ms=latency_ms,
-                input_tokens=0,
-                output_tokens=0,
-                success=False,
-                error_type=type(e).__name__,
-            )
+            provider = self._client.config.provider
+            if provider is not None:
+                self._metrics.record_call(
+                    provider=provider,
+                    model=self._client.config.model_name,
+                    latency_ms=latency_ms,
+                    input_tokens=0,
+                    output_tokens=0,
+                    success=False,
+                    error_type=type(e).__name__,
+                )
 
             raise
 
@@ -136,28 +140,32 @@ class LLMService:
             result = await self._client.complete(messages=messages)
 
             latency_ms = (time.perf_counter() - start_time) * 1000
-            self._metrics.record_call(
-                provider=self._client.config.provider,
-                model=self._client.config.model_name,
-                latency_ms=latency_ms,
-                input_tokens=self._estimate_tokens(prompt_text),
-                output_tokens=self._estimate_tokens(result),
-                success=True,
-            )
+            provider = self._client.config.provider
+            if provider is not None:
+                self._metrics.record_call(
+                    provider=provider,
+                    model=self._client.config.model_name,
+                    latency_ms=latency_ms,
+                    input_tokens=self._estimate_tokens(prompt_text),
+                    output_tokens=self._estimate_tokens(result),
+                    success=True,
+                )
 
             return result
 
         except Exception as e:
             latency_ms = (time.perf_counter() - start_time) * 1000
-            self._metrics.record_call(
-                provider=self._client.config.provider,
-                model=self._client.config.model_name,
-                latency_ms=latency_ms,
-                input_tokens=0,
-                output_tokens=0,
-                success=False,
-                error_type=type(e).__name__,
-            )
+            provider = self._client.config.provider
+            if provider is not None:
+                self._metrics.record_call(
+                    provider=provider,
+                    model=self._client.config.model_name,
+                    latency_ms=latency_ms,
+                    input_tokens=0,
+                    output_tokens=0,
+                    success=False,
+                    error_type=type(e).__name__,
+                )
             raise
 
     async def batch_invoke_structured(
@@ -211,10 +219,10 @@ class LLMService:
         if response_object and hasattr(response_object, "usage"):
             usage = response_object.usage
             if hasattr(usage, "total_tokens"):
-                return usage.total_tokens
+                return int(usage.total_tokens)
             # For prompt vs completion separation
             if hasattr(usage, "prompt_tokens") and hasattr(usage, "completion_tokens"):
-                return usage.prompt_tokens + usage.completion_tokens
+                return int(usage.prompt_tokens) + int(usage.completion_tokens)
 
         # Strategy 2: Use tiktoken for accurate counting
         try:

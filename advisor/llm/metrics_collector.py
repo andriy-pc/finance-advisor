@@ -25,7 +25,7 @@ class MetricsCollector:
         LLMProvider.OLLAMA: {"default": {"input": 0.0, "output": 0.0}},
     }
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize with empty metrics storage."""
         self._metrics: list[dict[str, Any]] = []
 

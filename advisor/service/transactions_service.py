@@ -1,3 +1,5 @@
+import datetime
+
 from advisor.db import db_models
 from advisor.llm.llm_service import LLMService
 from advisor.models import (
@@ -43,12 +45,12 @@ class TransactionsService:
 
         return NormalizedTransaction(
             type=raw_transaction.type,
-            amount=raw_transaction.amount,
-            date=raw_transaction.date,
-            currency=raw_transaction.currency,
+            amount=raw_transaction.amount if raw_transaction.amount is not None else 0.0,
+            date=raw_transaction.date if raw_transaction.date is not None else datetime.date.today(),
+            currency=raw_transaction.currency if raw_transaction.currency is not None else "USD",
             description=raw_transaction.description,
             source=raw_transaction.source,
-            raw_category=raw_transaction.raw_category,
+            raw_category=raw_transaction.raw_category if raw_transaction.raw_category is not None else "",
             predicted_category=categorization_result.predicted_category,
             category_confidence=categorization_result.category_confidence,
             resolved_category=categorization_result.predicted_category,  # TODO: ! this should be dynamic based on the confidence !
