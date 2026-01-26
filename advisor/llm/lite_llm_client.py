@@ -12,9 +12,11 @@ from tenacity import (
 )
 
 from advisor.constants import LLMProvider
-from advisor.llm.llm_output_parser import T
 from advisor.settings import LLMSettings
+from pydantic import BaseModel
+from typing import TypeVar
 
+T = TypeVar("T", bound=BaseModel)
 
 class LiteLLMClient:
     """
@@ -89,7 +91,9 @@ class LiteLLMClient:
         params = self._build_params(messages, **kwargs)
         params["response_model"] = response_model
 
-        return await self._instructor_client.chat.completions.create(**params, max_retries=self.schema_validation_max_retries)
+        return await self._instructor_client.chat.completions.create(
+            **params, max_retries=self.schema_validation_max_retries
+        )
 
     async def complete_streaming(self, messages: List[dict[str, str]], callback: Callable, **kwargs) -> None:
         """

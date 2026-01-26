@@ -177,15 +177,11 @@ class NormalizedTransaction(Base):
     # Recurrence detection
     recurrence_status: Mapped[RecurrenceStatus] = mapped_column(Enum(RecurrenceStatus), nullable=False)
     recurrence_confidence: Mapped[Decimal | None] = mapped_column(Numeric(precision=5, scale=4), nullable=True)
-    recurrence_period: Mapped[PeriodEnum] = mapped_column(Enum(PeriodEnum), nullable=False)
+    recurrence_period: Mapped[PeriodEnum | None] = mapped_column(Enum(PeriodEnum), nullable=True)
 
     # User relationship
     user_id: Mapped[int] = mapped_column(ForeignKey("USER.id"), nullable=False, index=True)
     user: Mapped["User"] = relationship(back_populates="normalized_transactions")
-
-    # Category relationship
-    category_id: Mapped[int | None] = mapped_column(ForeignKey("CATEGORY.id"), nullable=True, index=True)
-    category: Mapped[Optional["Category"]] = relationship()
 
     # Link to raw transaction
     raw_transaction_id: Mapped[int | None] = mapped_column(ForeignKey("RAW_TRANSACTION.id"), nullable=True, unique=True)

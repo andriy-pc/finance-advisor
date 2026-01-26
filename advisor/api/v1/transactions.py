@@ -1,11 +1,17 @@
+import logging
 from http import HTTPStatus
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from advisor.dependencies import get_session
+from advisor.db.db_models import NormalizedTransaction, RawTransaction
+from advisor.dependencies import get_session, get_transactions_service
 from advisor.ingestion.factory import ParserFactory
+from advisor.service.transactions_service import TransactionsService
+
+logger = logging.getLogger(__name__)
 
 
 def extract_user_id() -> int:
@@ -81,3 +87,38 @@ async def bulk_upload_transactions(
         "count": len(transactions),
         "user_id": user_id,
     }
+
+
+@transactions_router.post("/categorize", status_code=HTTPStatus.OK)
+async def bulk_categorization(
+    db_session: Annotated[AsyncSession, Depends(get_session)],
+    transactions_service: Annotated[TransactionsService, Depends(get_transactions_service)],
+) -> dict[str, Any]:
+    # TODO: ! this logic must be implemented as a background job due to long time-consuming interaction
+    raw_transactions: list[RawTransaction] = []
+    async with db_session.begin():
+        try:
+            raw_result = await db_session.execute(
+                select(RawTransaction).outerjoin(NormalizedTransaction).where(NormalizedTransaction.id.is_(None))
+            )
+            raw_transactions.extend(raw_result.scalars().all())
+
+            if not raw_transactions:
+                return {"message": "All the transactions are categorized"}
+        except Exception:
+            logging.exception("Failed to categorize transactions")
+
+        categorized_transactions = []
+        try:
+            categories = []
+            for raw_db_transaction in raw_transactions:
+                raw_transaction = transactions_service.map_raw_db_transaction_to_pydantic_model(raw_db_transaction)
+                normalized_model = await transactions_service.normalize_and_categorize(raw_transaction, categories)
+                normalized_db_model = transactions_service.map_normalized_transaction_to_db_model(normalized_model)
+                categorized_transactions.append(normalized_db_model)
+        except Exception:
+            logger.exception("Exception occurred during normalizing categories")
+
+        db_session.add_all(categorized_transactions)
+
+    return {"message": "Categorized transactions successfully"}
