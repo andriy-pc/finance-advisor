@@ -16,21 +16,20 @@ if (Test-Path $VenvActivate) {
 # These come from arguments passed to the script
 $CheckArgs = $args
 
-# isort
+Write-Host "Running isort..."
 python -m isort `
     --quiet `
     --settings "$ProjectRoot\pyproject.toml" `
-    --skip "$ProjectRoot\.cache" `
-    --skip "$ProjectRoot\.venv" `
     @CheckArgs `
     "$ProjectRoot"
 
-# black
+Write-Host "Running black..."
 python -m black `
+    --config "$ProjectRoot\pyproject.toml" `
     @CheckArgs `
     "$ProjectRoot"
 
-# mypy
+Write-Host "Running mypy..."
 python -m mypy `
     --config-file "$ProjectRoot\pyproject.toml" `
     --cache-dir "$ProjectRoot\.mypy_cache" `

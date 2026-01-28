@@ -42,7 +42,7 @@ class CategoryPrediction(BaseModel):
     confidence_score: float = Field(description="Confidence score between 0 and 1")
 
 
-class RawTransaction(BaseModel):
+class RawTransactionModel(BaseModel):
     id: int
     external_id: UUID | None = None
     type: TransactionType
@@ -61,28 +61,27 @@ class CategorizationResult(BaseModel):
 
     predicted_category: str = Field(
         ...,
-        description="Best matching user-defined category, or suggested category with '_MISSING' suffix if no match found"
+        description="Best matching user-defined category, or suggested category with '_MISSING' suffix if no match found",
     )
     category_confidence: float = Field(
         ...,
         ge=0.0,
         le=1.0,
-        description="Confidence score for the categorization (0.0 = no confidence, 1.0 = very confident)"
+        description="Confidence score for the categorization (0.0 = no confidence, 1.0 = very confident)",
     )
     reasoning: str = Field(
-        ...,
-        description="Brief explanation of why this category was chosen and the confidence level"
+        ..., description="Brief explanation of why this category was chosen and the confidence level"
     )
 
-    @field_validator('category_confidence')
+    @field_validator("category_confidence")
     @classmethod
     def validate_confidence(cls, v: float) -> float:
         if not 0.0 <= v <= 1.0:
-            raise ValueError('Confidence must be between 0.0 and 1.0')
+            raise ValueError("Confidence must be between 0.0 and 1.0")
         return v
 
 
-class NormalizedTransaction(BaseModel):
+class NormalizedTransactionModel(BaseModel):
     id: str | None = None
     external_id: UUID | None = None
 
@@ -101,6 +100,9 @@ class NormalizedTransaction(BaseModel):
     recurrence_status: RecurrenceStatus
     recurrence_confidence: float | None = None
     recurrence_period: PeriodEnum | None = None
+
+    user_id: int | None = None
+    raw_transaction_id: int | None = None
 
 
 class BudgetThreshold(BaseModel):
@@ -151,7 +153,7 @@ class FinancialPeriodState(BaseModel):
 class FinancialState(BaseModel):
     currency: str
 
-    transactions: list[NormalizedTransaction]
+    transactions: list[NormalizedTransactionModel]
     budgets: list[BudgetThreshold]
 
     current_period: FinancialPeriodState

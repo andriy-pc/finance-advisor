@@ -1,11 +1,15 @@
+import logging
 from http import HTTPStatus
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from advisor.dependencies import get_session
+from advisor.dependencies import get_session, get_transactions_service
 from advisor.ingestion.factory import ParserFactory
+from advisor.service.transactions_service import TransactionsService
+
+logger = logging.getLogger(__name__)
 
 
 def extract_user_id() -> int:
@@ -81,3 +85,14 @@ async def bulk_upload_transactions(
         "count": len(transactions),
         "user_id": user_id,
     }
+
+
+@transactions_router.post("/categorize", status_code=HTTPStatus.OK)
+async def bulk_categorization(
+    transactions_service: Annotated[TransactionsService, Depends(get_transactions_service)],
+) -> dict[str, Any]:
+    user_id = extract_user_id()
+    logger.info(f"Categorizing transactions for user: {user_id}")
+    await transactions_service.normalize_and_categorize_raw_transactions(user_id)
+
+    return {"message": "Categorized transactions successfully"}

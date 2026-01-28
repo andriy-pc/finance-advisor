@@ -1,5 +1,5 @@
 import json
-from typing import Optional, Type, TypeVar
+from typing import Any, Callable, Optional, Type, TypeVar
 
 from pydantic import BaseModel, ValidationError
 
@@ -43,7 +43,7 @@ class OutputParser:
             raise ValueError(f"Output doesn't match {expected_type.__name__} schema: {str(e)}")
 
     def parse_with_fallback(
-        self, llm_output: str, expected_type: Type[T], default_factory: Optional[callable] = None
+        self, llm_output: str, expected_type: Type[T], default_factory: Optional[Callable[[], T]] = None
     ) -> T:
         """
         Parse with graceful fallback to default instance.
@@ -75,7 +75,7 @@ class OutputParser:
             pass
 
         # Strategy 3: Default instance
-        if default_factory:
+        if default_factory is not None:
             return default_factory()
 
         return self._create_minimal_instance(expected_type)
@@ -132,7 +132,7 @@ class OutputParser:
 
         Uses field defaults or sensible type-based defaults.
         """
-        default_values = {}
+        default_values: dict[str, Any] = {}
 
         for field_name, field_info in expected_type.model_fields.items():
             # Use field default if available
@@ -145,15 +145,15 @@ class OutputParser:
 
             # Provide type-based defaults
             annotation = field_info.annotation
-            if annotation == str or str in str(annotation):
+            if annotation is str:
                 default_values[field_name] = "unknown"
-            elif annotation == float or float in str(annotation):
+            elif annotation is float:
                 default_values[field_name] = 0.0
-            elif annotation == int or int in str(annotation):
+            elif annotation is int:
                 default_values[field_name] = 0
-            elif annotation == bool or bool in str(annotation):
+            elif annotation is bool:
                 default_values[field_name] = False
-            elif annotation == list or "List" in str(annotation):
+            elif annotation is list:
                 default_values[field_name] = []
 
         return expected_type(**default_values)

@@ -35,7 +35,7 @@ class Base(DeclarativeBase):
         result = {}
         for column in self.__table__.columns:
             value = getattr(self, column.name)
-            result[column.name] = value  # type: ignore
+            result[column.name] = value
         return result
 
     def __eq__(self, other: object) -> bool:
@@ -86,6 +86,28 @@ class User(Base):
     )
     financial_period_snapshots: Mapped[list["FinancialPeriodSnapshot"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
+    )
+
+
+class GlobalCategory(Base):
+    __tablename__ = "GLOBAL_CATEGORY"
+
+    id: Mapped[int] = mapped_column(BigInteger(), primary_key=True, autoincrement=True)
+    external_id: Mapped[str] = mapped_column(UUID(as_uuid=True), default=uuid4, unique=True, nullable=False)
+
+    # Category details
+    name: Mapped[str] = mapped_column(String(100), nullable=False)
+    is_discretionary: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+
+    # Timestamps
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+        nullable=False,
     )
 
 
@@ -177,15 +199,11 @@ class NormalizedTransaction(Base):
     # Recurrence detection
     recurrence_status: Mapped[RecurrenceStatus] = mapped_column(Enum(RecurrenceStatus), nullable=False)
     recurrence_confidence: Mapped[Decimal | None] = mapped_column(Numeric(precision=5, scale=4), nullable=True)
-    recurrence_period: Mapped[PeriodEnum] = mapped_column(Enum(PeriodEnum), nullable=False)
+    recurrence_period: Mapped[PeriodEnum | None] = mapped_column(Enum(PeriodEnum), nullable=True)
 
     # User relationship
     user_id: Mapped[int] = mapped_column(ForeignKey("USER.id"), nullable=False, index=True)
     user: Mapped["User"] = relationship(back_populates="normalized_transactions")
-
-    # Category relationship
-    category_id: Mapped[int | None] = mapped_column(ForeignKey("CATEGORY.id"), nullable=True, index=True)
-    category: Mapped[Optional["Category"]] = relationship()
 
     # Link to raw transaction
     raw_transaction_id: Mapped[int | None] = mapped_column(ForeignKey("RAW_TRANSACTION.id"), nullable=True, unique=True)

@@ -1,9 +1,10 @@
 import os
-from typing import Any, Callable, List, Type
+from typing import Any, Callable, List, Type, TypeVar
 
 import instructor
 import litellm
 from litellm import acompletion
+from pydantic import BaseModel
 from tenacity import (
     retry,
     retry_if_exception_type,
@@ -12,8 +13,9 @@ from tenacity import (
 )
 
 from advisor.constants import LLMProvider
-from advisor.llm.llm_output_parser import T
 from advisor.settings import LLMSettings
+
+T = TypeVar("T", bound=BaseModel)
 
 
 class LiteLLMClient:
@@ -47,14 +49,16 @@ class LiteLLMClient:
 
         # Configure LiteLLM behavior
         litellm.drop_params = True  # Ignore unsupported params gracefully
-        litellm.set_verbose = False  # Disable verbose logging
+        litellm.set_verbose = (  # type: ignore
+            False  # Disable verbose logging - attribute not available or explicitly exported
+        )
 
     @retry(
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=1, min=2, max=10),
         retry=retry_if_exception_type((Exception,)),
     )
-    async def complete(self, messages: List[dict[str, str]], **kwargs) -> str:
+    async def complete(self, messages: List[dict[str, str]], **kwargs: Any) -> str:
         """
         Execute completion and return text response.
 
@@ -69,10 +73,10 @@ class LiteLLMClient:
         """
         params = self._build_params(messages, **kwargs)
         response = await acompletion(**params)
-        return response.choices[0].message.content
+        content = response.choices[0].message.content
+        return str(content) if content is not None else ""
 
-    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
-    async def complete_structured(self, messages: List[dict[str, str]], response_model: Type[T], **kwargs) -> T:
+    async def complete_structured(self, messages: List[dict[str, str]], response_model: Type[T], **kwargs: Any) -> T:
         """
         Execute completion with structured output using instructor.
 
@@ -89,9 +93,14 @@ class LiteLLMClient:
         params = self._build_params(messages, **kwargs)
         params["response_model"] = response_model
 
-        return await self._instructor_client.chat.completions.create(**params, max_retries=self.schema_validation_max_retries)
+        result = await self._instructor_client.chat.completions.create(
+            **params, max_retries=self.schema_validation_max_retries
+        )
+        return result  # type: ignore[no-any-return]
 
-    async def complete_streaming(self, messages: List[dict[str, str]], callback: Callable, **kwargs) -> None:
+    async def complete_streaming(
+        self, messages: List[dict[str, str]], callback: Callable[[str], Any], **kwargs: Any
+    ) -> None:
         """
         Execute streaming completion with token-by-token callback.
 
@@ -109,7 +118,7 @@ class LiteLLMClient:
             if chunk.choices[0].delta.content:
                 await callback(chunk.choices[0].delta.content)
 
-    def _build_params(self, messages: List[dict[str, str]], **kwargs) -> dict[str, Any]:
+    def _build_params(self, messages: List[dict[str, str]], **kwargs: Any) -> dict[str, Any]:
         """
         Build LiteLLM parameters from config and overrides.
 
@@ -125,7 +134,7 @@ class LiteLLMClient:
             "messages": messages,
             "temperature": self.config.temperature,
             "timeout": self.config.timeout,
-            "reasoning_effort": self.config.reasoning_effort,
+            # "reasoning_effort": self.config.reasoning_effort,
             **kwargs,
         }
 
@@ -149,7 +158,7 @@ class LiteLLMClient:
         """
         try:
             response = litellm.completion(
-                model=self.config.to_litellm_model(),
+                model=self.config.to_litellm_model_name(),
                 messages=[{"role": "user", "content": "test"}],
                 max_tokens=5,
                 timeout=5,
@@ -157,7 +166,8 @@ class LiteLLMClient:
             )
             return response is not None
         except Exception as e:
-            raise ConnectionError(f"Failed to validate connection to {self.config.provider.value}: {str(e)}")
+            provider_name = self.config.provider.value if self.config.provider else "unknown"
+            raise ConnectionError(f"Failed to validate connection to {provider_name}: {str(e)}") from e
 
     def get_metadata(self) -> dict[str, Any]:
         """
@@ -167,7 +177,7 @@ class LiteLLMClient:
             Dict with provider, model, and configuration info
         """
         return {
-            "provider": self.config.provider.value,
+            "provider": self.config.provider.value if self.config.provider else None,
             "model": self.config.model_name,
             "temperature": self.config.temperature,
             "max_tokens": self.config.max_tokens,
