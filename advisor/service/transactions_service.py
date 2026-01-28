@@ -38,7 +38,7 @@ class TransactionsService:
             )
             return list(raw_result.scalars().all())
 
-    async def normalize_and_categorize_raw_transactions(self, user_id: int) -> int:
+    async def transactions_post_process(self, user_id: int) -> int:
         raw_transactions = await self.get_user_raw_transactions(user_id)
 
         if not raw_transactions:

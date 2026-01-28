@@ -96,7 +96,7 @@ async def bulk_upload_transactions(
 
 async def _chain_transactions_post_processing_and_budged_recalculations(user_id: int, transactions_service: TransactionsService) -> None:
     try:
-        await transactions_service.normalize_and_categorize_raw_transactions(user_id)
+        await transactions_service.transactions_post_process(user_id)
     except Exception:
         logger.exception("Failed categorization")
 
@@ -113,6 +113,6 @@ async def bulk_categorization(
 ) -> dict[str, Any]:
     user_id = extract_user_id()
     logger.info(f"Categorizing transactions for user: {user_id}")
-    await transactions_service.normalize_and_categorize_raw_transactions(user_id)
+    await transactions_service.transactions_post_process(user_id)
 
     return {"message": "Categorized transactions successfully"}
