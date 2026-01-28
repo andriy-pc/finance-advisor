@@ -38,12 +38,12 @@ class TransactionsService:
             )
             return list(raw_result.scalars().all())
 
-    async def normalize_and_categorize_raw_transactions(self, user_id: int) -> None:
+    async def normalize_and_categorize_raw_transactions(self, user_id: int) -> int:
         raw_transactions = await self.get_user_raw_transactions(user_id)
 
         if not raw_transactions:
             logger.info(f"All transactions for user {user_id} were normalized and categorized")
-            return
+            return 0
 
         categories = await self.category_service.get_user_categories(user_id=user_id, global_fallback=True)
 
@@ -67,6 +67,8 @@ class TransactionsService:
 
         async with self.db_connector.get_session() as session, session.begin():
             session.add_all(categorized_transactions)
+
+        return len(categorized_transactions)
 
     async def normalize_and_categorize_single_transaction(
         self, raw_transaction: db_models.RawTransaction, categories: list[str]

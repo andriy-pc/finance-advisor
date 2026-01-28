@@ -2,7 +2,7 @@ import logging
 from http import HTTPStatus
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from advisor.dependencies import get_session, get_transactions_service
@@ -28,8 +28,10 @@ transactions_router = APIRouter(prefix="/transactions", tags=["transactions"])
 @transactions_router.post("/bulk", status_code=HTTPStatus.CREATED)
 async def bulk_upload_transactions(
     db_session: Annotated[AsyncSession, Depends(get_session)],
+    transactions_service: Annotated[TransactionsService, Depends(get_transactions_service)],
+    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
-) -> dict[str, Any]:
+) -> dict[str, str | int]:
     """
     Bulk upload transactions from CSV file.
 
@@ -42,6 +44,8 @@ async def bulk_upload_transactions(
     Args:
         file: CSV file containing transaction data
         db_session: Database session
+        transactions_service:
+        background_tasks:
 
     Returns:
         Dictionary with success message and count of imported transactions
@@ -80,11 +84,27 @@ async def bulk_upload_transactions(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR, detail=f"Failed to store transactions: {str(e)}"
         ) from e
 
+    background_tasks.add_task(
+        _chain_transactions_post_processing_and_budged_recalculations, user_id, transactions_service
+    )
+
     return {
         "message": "Transactions imported successfully",
-        "count": len(transactions),
+        "saved_count": len(transactions),
         "user_id": user_id,
     }
+
+async def _chain_transactions_post_processing_and_budged_recalculations(user_id: int, transactions_service: TransactionsService) -> None:
+    try:
+        await transactions_service.normalize_and_categorize_raw_transactions(user_id)
+    except Exception:
+        logger.exception("Failed categorization")
+
+    # TODO: ! add cash flow logic
+    # try:
+    #     await transactions_service.update_budget(user_id)
+    # except Exception:
+    #     logger.exception("Failed budget update")
 
 
 @transactions_router.post("/categorize", status_code=HTTPStatus.OK)
