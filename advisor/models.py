@@ -42,7 +42,7 @@ class CategoryPrediction(BaseModel):
     confidence_score: float = Field(description="Confidence score between 0 and 1")
 
 
-class RawTransaction(BaseModel):
+class RawTransactionModel(BaseModel):
     id: int
     external_id: UUID | None = None
     type: TransactionType
@@ -81,7 +81,7 @@ class CategorizationResult(BaseModel):
         return v
 
 
-class NormalizedTransaction(BaseModel):
+class NormalizedTransactionModel(BaseModel):
     id: str | None = None
     external_id: UUID | None = None
 
@@ -153,7 +153,7 @@ class FinancialPeriodState(BaseModel):
 class FinancialState(BaseModel):
     currency: str
 
-    transactions: list[NormalizedTransaction]
+    transactions: list[NormalizedTransactionModel]
     budgets: list[BudgetThreshold]
 
     current_period: FinancialPeriodState

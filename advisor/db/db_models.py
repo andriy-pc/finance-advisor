@@ -88,6 +88,7 @@ class User(Base):
         back_populates="user", cascade="all, delete-orphan"
     )
 
+
 class GlobalCategory(Base):
     __tablename__ = "GLOBAL_CATEGORY"
 
@@ -108,6 +109,7 @@ class GlobalCategory(Base):
         onupdate=lambda: datetime.now(timezone.utc),
         nullable=False,
     )
+
 
 class Category(Base):
     __tablename__ = "CATEGORY"

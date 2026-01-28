@@ -49,7 +49,9 @@ class LiteLLMClient:
 
         # Configure LiteLLM behavior
         litellm.drop_params = True  # Ignore unsupported params gracefully
-        # litellm.set_verbose = False  # Disable verbose logging - attribute not available or explicitly exported
+        litellm.set_verbose = (  # type: ignore
+            False  # Disable verbose logging - attribute not available or explicitly exported
+        )
 
     @retry(
         stop=stop_after_attempt(3),
@@ -74,7 +76,6 @@ class LiteLLMClient:
         content = response.choices[0].message.content
         return str(content) if content is not None else ""
 
-    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
     async def complete_structured(self, messages: List[dict[str, str]], response_model: Type[T], **kwargs: Any) -> T:
         """
         Execute completion with structured output using instructor.
@@ -133,7 +134,7 @@ class LiteLLMClient:
             "messages": messages,
             "temperature": self.config.temperature,
             "timeout": self.config.timeout,
-            "reasoning_effort": self.config.reasoning_effort,
+            # "reasoning_effort": self.config.reasoning_effort,
             **kwargs,
         }
 
