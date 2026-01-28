@@ -19,7 +19,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy.types import UUID
 
-from advisor.models import (
+from advisor.data_models import (
     BudgedThresholdSourceEnum,
     PeriodEnum,
     RecurrenceStatus,

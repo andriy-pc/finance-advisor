@@ -8,7 +8,7 @@ from uuid import uuid4
 
 from advisor.db.db_models import RawTransaction
 from advisor.ingestion.base_parser import BaseParser
-from advisor.models import TransactionType
+from advisor.data_models import TransactionType
 
 DEFAULT_CURRENCY = "USD"
 

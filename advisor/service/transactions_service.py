@@ -7,8 +7,8 @@ from sqlalchemy import select
 from advisor.db import db_models
 from advisor.db.db_async_connector import DBAsyncConnector
 from advisor.llm.llm_service import LLMService
-from advisor.models import (
-    CategorizationResult,
+from advisor.data_models import (
+    CategorizationResultModel,
     NormalizedTransactionModel,
     RawTransactionModel,
     RecurrenceStatus,
@@ -94,7 +94,7 @@ class TransactionsService:
         categorization_result = await self.llm_service.invoke_structured(
             prompt_key="categorize_transaction_user",
             variables={"transaction": raw_transaction.model_dump(), "user_categories": categories},
-            response_model=CategorizationResult,
+            response_model=CategorizationResultModel,
             system_prompt_key="categorize_transaction_system",
         )
 

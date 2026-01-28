@@ -37,7 +37,7 @@ class BudgedThresholdSourceEnum(Enum):
     SYSTEM_SUGGESTED = "system_suggested"
 
 
-class CategoryPrediction(BaseModel):
+class CategoryPredictionModel(BaseModel):
     category: str = Field(description="The best matching category from the list")
     confidence_score: float = Field(description="Confidence score between 0 and 1")
 
@@ -56,7 +56,7 @@ class RawTransactionModel(BaseModel):
     raw_data: dict[str, Any]
 
 
-class CategorizationResult(BaseModel):
+class CategorizationResultModel(BaseModel):
     """Result of transaction categorization with confidence score."""
 
     predicted_category: str = Field(
@@ -105,7 +105,7 @@ class NormalizedTransactionModel(BaseModel):
     raw_transaction_id: int | None = None
 
 
-class BudgetThreshold(BaseModel):
+class BudgetThresholdModel(BaseModel):
     id: str
     category: str
 
@@ -120,14 +120,14 @@ class BudgetThreshold(BaseModel):
     end_date: datetime.date | None
 
 
-class CategorySpend(BaseModel):
+class CategorySpendModel(BaseModel):
     category: str
     total_amount: float
     currency: str
     transaction_count: int
 
 
-class BudgetStatus(BaseModel):
+class BudgetStatusModel(BaseModel):
     category: str
     limit_amount: float
     spent_amount: float
@@ -136,7 +136,7 @@ class BudgetStatus(BaseModel):
     is_overspent: bool
 
 
-class FinancialPeriodState(BaseModel):
+class FinancialPeriodStateModel(BaseModel):
     period: PeriodEnum
     start_date: datetime.date
     end_date: datetime.date
@@ -146,14 +146,14 @@ class FinancialPeriodState(BaseModel):
     savings: float
     savings_rate: float  # derived: savings / income
 
-    category_spend: list[CategorySpend]
-    budget_status: list[BudgetStatus]
+    category_spend: list[CategorySpendModel]
+    budget_status: list[BudgetStatusModel]
 
 
-class FinancialState(BaseModel):
+class FinancialStateModel(BaseModel):
     currency: str
 
     transactions: list[NormalizedTransactionModel]
-    budgets: list[BudgetThreshold]
+    budgets: list[BudgetThresholdModel]
 
-    current_period: FinancialPeriodState
+    current_period: FinancialPeriodStateModel
