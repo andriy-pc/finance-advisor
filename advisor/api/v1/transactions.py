@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from advisor.db.db_models import NormalizedTransaction, RawTransaction
+from advisor.db.db_models import NormalizedTransaction, RawTransaction, Category, GlobalCategory
 from advisor.dependencies import get_session, get_transactions_service
 from advisor.ingestion.factory import ParserFactory
 from advisor.service.transactions_service import TransactionsService
@@ -108,12 +108,15 @@ async def bulk_categorization(
         except Exception:
             logging.exception("Failed to categorize transactions")
 
+        user_categories = list((await db_session.execute(select(Category.name).where(Category.user_id == extract_user_id()))).scalars())
+        if not user_categories:
+            user_categories = list((await db_session.execute(select(GlobalCategory.name))).scalars())
+
         categorized_transactions = []
         try:
-            categories: list[str] = []
             for raw_db_transaction in raw_transactions:
                 raw_transaction = transactions_service.map_raw_db_transaction_to_pydantic_model(raw_db_transaction)
-                normalized_model = await transactions_service.normalize_and_categorize(raw_transaction, categories)
+                normalized_model = await transactions_service.normalize_and_categorize(raw_transaction, user_categories)
                 normalized_db_model = transactions_service.map_normalized_transaction_to_db_model(normalized_model)
                 categorized_transactions.append(normalized_db_model)
         except Exception:

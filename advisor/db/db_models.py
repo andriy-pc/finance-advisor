@@ -88,6 +88,26 @@ class User(Base):
         back_populates="user", cascade="all, delete-orphan"
     )
 
+class GlobalCategory(Base):
+    __tablename__ = "GLOBAL_CATEGORY"
+
+    id: Mapped[int] = mapped_column(BigInteger(), primary_key=True, autoincrement=True)
+    external_id: Mapped[str] = mapped_column(UUID(as_uuid=True), default=uuid4, unique=True, nullable=False)
+
+    # Category details
+    name: Mapped[str] = mapped_column(String(100), nullable=False)
+    is_discretionary: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+
+    # Timestamps
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+        nullable=False,
+    )
 
 class Category(Base):
     __tablename__ = "CATEGORY"
