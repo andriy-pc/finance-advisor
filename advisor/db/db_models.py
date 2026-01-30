@@ -27,6 +27,7 @@ from advisor.data_models import (
 )
 
 
+# TODO: ! use server defaults instead !
 class Base(DeclarativeBase):
     """Base class for all database models."""
 
@@ -290,8 +291,8 @@ class FinancialPeriodSnapshot(Base):
     )  # savings / total_income
 
     # Aggregated data stored as JSON
-    category_spend: Mapped[list[dict[str, Any]]] = mapped_column(JSON, default=list, nullable=False)
-    budget_status: Mapped[list[dict[str, Any]]] = mapped_column(JSON, default=list, nullable=False)
+    categories_spends: Mapped[list[dict[str, Any]]] = mapped_column(JSON, default=list, nullable=False)
+    budgets_statuses: Mapped[list[dict[str, Any]]] = mapped_column(JSON, default=list, nullable=False)
 
     # User relationship
     user_id: Mapped[int] = mapped_column(ForeignKey("USER.id"), nullable=False, index=True)

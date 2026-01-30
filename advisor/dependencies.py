@@ -6,7 +6,9 @@ from advisor.db.db_async_connector import DBAsyncConnector
 from advisor.llm.lite_llm_client import LiteLLMClient
 from advisor.llm.llm_service import LLMService
 from advisor.llm.prompt_manager import PromptManager
+from advisor.service.budgets_service import BudgetsService
 from advisor.service.category_service import CategoryService
+from advisor.service.finances_service import FinancesService
 from advisor.service.transactions_service import TransactionsService
 from advisor.settings import ProjectSettings
 
@@ -18,6 +20,22 @@ _llm_service: "LLMService | None" = None
 _prompt_manager: "PromptManager | None" = None
 _lite_llm_client: "LiteLLMClient | None" = None
 _category_service: "CategoryService | None" = None
+_finances_service: "FinancesService | None" = None
+_budgets_service: "BudgetsService | None" = None
+
+
+def get_budgets_service() -> "BudgetsService":
+    global _budgets_service
+    if _budgets_service is None:
+        _budgets_service = BudgetsService(get_db_connector())
+    return _budgets_service
+
+
+def get_finances_service() -> "FinancesService":
+    global _finances_service
+    if _finances_service is None:
+        _finances_service = FinancesService(get_db_connector(), get_transactions_service(), get_budgets_service())
+    return _finances_service
 
 
 def get_category_service() -> CategoryService:

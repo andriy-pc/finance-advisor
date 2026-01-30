@@ -1,18 +1,19 @@
 import datetime
 import logging
 from asyncio import create_task, gather
+from decimal import Decimal
 
 from sqlalchemy import select
 
-from advisor.db import db_models
-from advisor.db.db_async_connector import DBAsyncConnector
-from advisor.llm.llm_service import LLMService
 from advisor.data_models import (
     CategorizationResultModel,
     NormalizedTransactionModel,
     RawTransactionModel,
     RecurrenceStatus,
 )
+from advisor.db import db_models
+from advisor.db.db_async_connector import DBAsyncConnector
+from advisor.llm.llm_service import LLMService
 from advisor.service.category_service import CategoryService
 
 logger = logging.getLogger(__name__)
@@ -102,7 +103,7 @@ class TransactionsService:
 
         return NormalizedTransactionModel(
             type=raw_transaction.type,
-            amount=raw_transaction.amount if raw_transaction.amount is not None else 0.0,
+            amount=raw_transaction.amount if raw_transaction.amount is not None else Decimal(0.0),
             date=raw_transaction.date if raw_transaction.date is not None else datetime.date.today(),
             currency=raw_transaction.currency if raw_transaction.currency is not None else "USD",
             description=raw_transaction.description,
@@ -112,7 +113,7 @@ class TransactionsService:
             category_confidence=categorization_result.category_confidence,
             resolved_category=categorization_result.predicted_category,
             recurrence_status=RecurrenceStatus.UNKNOWN,
-            recurrence_confidence=0.0,
+            recurrence_confidence=Decimal(0.0),
             recurrence_period=None,
         )
 

@@ -2,7 +2,7 @@ import logging
 from http import HTTPStatus
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, BackgroundTasks
+from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from advisor.dependencies import get_session, get_transactions_service
@@ -94,7 +94,10 @@ async def bulk_upload_transactions(
         "user_id": user_id,
     }
 
-async def _chain_transactions_post_processing_and_budged_recalculations(user_id: int, transactions_service: TransactionsService) -> None:
+
+async def _chain_transactions_post_processing_and_budged_recalculations(
+    user_id: int, transactions_service: TransactionsService
+) -> None:
     try:
         await transactions_service.transactions_post_process(user_id)
     except Exception:

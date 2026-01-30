@@ -1,4 +1,5 @@
 import datetime
+from decimal import Decimal
 from enum import Enum
 from typing import Any
 from uuid import UUID
@@ -46,7 +47,7 @@ class RawTransactionModel(BaseModel):
     id: int
     external_id: UUID | None = None
     type: TransactionType
-    amount: float | None = None
+    amount: Decimal | None = None
     date: datetime.date | None = None
     currency: str | None
     description: str | None = None
@@ -86,7 +87,7 @@ class NormalizedTransactionModel(BaseModel):
     external_id: UUID | None = None
 
     type: TransactionType
-    amount: float
+    amount: Decimal
     date: datetime.date
     currency: str
     description: str | None
@@ -98,7 +99,7 @@ class NormalizedTransactionModel(BaseModel):
     resolved_category: str  # resolved with LLM
 
     recurrence_status: RecurrenceStatus
-    recurrence_confidence: float | None = None
+    recurrence_confidence: Decimal | None = None
     recurrence_period: PeriodEnum | None = None
 
     user_id: int | None = None
@@ -110,7 +111,7 @@ class BudgetThresholdModel(BaseModel):
     category: str
 
     period: PeriodEnum
-    limit_amount: float
+    limit_amount: Decimal
     currency: str
 
     source: BudgedThresholdSourceEnum
@@ -122,38 +123,37 @@ class BudgetThresholdModel(BaseModel):
 
 class CategorySpendModel(BaseModel):
     category: str
-    total_amount: float
+    total_amount: Decimal
     currency: str
     transaction_count: int
 
 
 class BudgetStatusModel(BaseModel):
     category: str
-    limit_amount: float
-    spent_amount: float
-    remaining_amount: float
+    limit_amount: Decimal | None = None
+    spent_amount: Decimal | None = None
+    remaining_amount: Decimal | None = None
     currency: str
     is_overspent: bool
 
 
-class FinancialPeriodStateModel(BaseModel):
+class FinancialPeriodSnapshotModel(BaseModel):
     period: PeriodEnum
     start_date: datetime.date
     end_date: datetime.date
 
-    total_income: float
-    total_outcome: float
-    savings: float
-    savings_rate: float  # derived: savings / income
+    total_income: Decimal
+    total_outcome: Decimal
+    savings: Decimal
+    savings_rate: Decimal  # derived: savings / income
 
-    category_spend: list[CategorySpendModel]
-    budget_status: list[BudgetStatusModel]
+    categories_spends: list[CategorySpendModel]
+    budgets_statuses: list[BudgetStatusModel]
 
 
 class FinancialStateModel(BaseModel):
-    currency: str
 
     transactions: list[NormalizedTransactionModel]
-    budgets: list[BudgetThresholdModel]
+    thresholds: list[BudgetThresholdModel]
 
-    current_period: FinancialPeriodStateModel
+    finance_snapshot: FinancialPeriodSnapshotModel
