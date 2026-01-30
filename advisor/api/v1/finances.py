@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends
@@ -24,15 +24,13 @@ def extract_user_id() -> int:
 
 
 @finances_router.get("/current-month")
-async def get_current_month_finances_state(
+async def get_current_month_financial_state(
     finances_service: Annotated[FinancesService, Depends(get_finances_service)],
 ) -> dict[str, Any]:
     current_month = datetime.now(timezone.utc).month
     current_year = datetime.now(timezone.utc).year
-    start_date = datetime(current_year, current_month, 1)
-    end_date = datetime(current_year, current_month + 1, 1)
-    financial_state = await finances_service.get_up_to_date_financial_snapshot_for_period(
-        extract_user_id(), start_date, end_date
+    financial_state = await finances_service.get_up_to_date_financial_snapshot_current_month(
+        extract_user_id(), current_month, current_year
     )
 
     return {"financial_state": financial_state.model_dump(mode="json")}

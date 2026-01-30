@@ -1,4 +1,4 @@
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 from typing import Any
 
@@ -25,12 +25,15 @@ class FinancesService:
         self.transactions_service = transactions_service
         self.budgets_service = budgets_service
 
-    async def get_up_to_date_financial_snapshot_for_period(
+    async def get_up_to_date_financial_snapshot_current_month(
         self,
         user_id: int,
-        start_date: date,
-        end_date: date,
+        current_month: int,
+        current_year: int,
     ) -> FinancialPeriodSnapshotModel:
+
+        start_date = datetime(current_year, current_month, 1)
+        end_date = datetime(current_year, current_month + 1, 1) - timedelta(days=1)
 
         async with self.db_connector.get_session() as session:
             financial_snapshot = (
