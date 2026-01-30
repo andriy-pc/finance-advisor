@@ -1,6 +1,7 @@
 from datetime import date
 
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 
 from advisor.data_models import (
     BudgetStatusModel,
@@ -29,7 +30,9 @@ class BudgetsService:
             budget_thresholds = list(
                 (
                     await session.execute(
-                        select(BudgetThreshold).where(
+                        select(BudgetThreshold)
+                        .options(selectinload(BudgetThreshold.category))
+                        .where(
                             BudgetThreshold.user_id == user_id,
                             BudgetThreshold.start_date <= start_date,
                             BudgetThreshold.end_date >= end_date,
