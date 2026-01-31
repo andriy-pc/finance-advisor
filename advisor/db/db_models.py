@@ -1,3 +1,4 @@
+import uuid
 from datetime import date, datetime, timezone
 from decimal import Decimal
 from typing import Any, Optional
@@ -7,11 +8,13 @@ from sqlalchemy import (
     JSON,
     BigInteger,
     Boolean,
+    Column,
     Date,
     DateTime,
     Enum,
     ForeignKey,
     Index,
+    Integer,
     Numeric,
     String,
     Text,
@@ -21,6 +24,9 @@ from sqlalchemy.types import UUID
 
 from advisor.data_models import (
     BudgedThresholdSourceEnum,
+    ConversationRole,
+    ConversationStatus,
+    IntentType,
     PeriodEnum,
     RecurrenceStatus,
     TransactionType,
@@ -310,3 +316,37 @@ class FinancialPeriodSnapshot(Base):
     )
 
     __table_args__ = (Index("ix_financial_period_snapshot_user_period", "user_id", "period", "start_date"),)
+
+
+class Message(Base):
+    __tablename__ = "CONVERSATION_MESSAGE"
+    id: Mapped[int] = mapped_column(BigInteger(), primary_key=True, autoincrement=True)
+    external_id: Mapped[str] = mapped_column(UUID(as_uuid=True), default=uuid4, unique=True, index=True)
+
+    conversation_id: Mapped[int] = mapped_column(ForeignKey("CONVERSATION.id"), nullable=False)
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    role: Mapped[ConversationRole] = mapped_column(Enum(ConversationRole))
+    timestamp: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+
+
+class Conversation(Base):
+    __tablename__ = "CONVERSATION"
+
+    id: Mapped[int] = mapped_column(BigInteger(), primary_key=True, autoincrement=True)
+    conversation_id: Mapped[str] = mapped_column(UUID(as_uuid=True), default=uuid4, unique=True, index=True)
+    # User relationship
+    user_id: Mapped[int] = mapped_column(ForeignKey("USER.id"), nullable=False, index=True)
+
+    status: Mapped[ConversationStatus] = mapped_column(Enum(ConversationStatus), default=ConversationStatus.ACTIVE)
+    intent: Mapped[IntentType] = mapped_column(Enum(IntentType), nullable=True)
+
+    turn_count: Mapped[int] = mapped_column(Integer, default=0)
+    max_turns: Mapped[int] = mapped_column(Integer, default=5)
+
+    collected_data: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+
+    # TODO: ! configure proper relationship !
+    messages: Mapped[list[Message]] = mapped_column(JSON, default=list, nullable=False)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))

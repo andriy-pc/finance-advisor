@@ -157,3 +157,48 @@ class FinancialStateModel(BaseModel):
     thresholds: list[BudgetThresholdModel]
 
     finance_snapshot: FinancialPeriodSnapshotModel
+
+
+class ConversationStatus(Enum):
+    ACTIVE = "active"
+    COMPLETED_SUCCESS = "completed_success"
+    COMPLETED_ERROR = "completed_error"
+    TERMINATED_OFF_TOPIC = "terminated_off_topic"
+    TERMINATED_MAX_TURNS = "terminated_max_turns"
+
+
+class IntentType(Enum):
+    EVALUATE_PURCHASE = "evaluate_purchase"
+    ADD_TRANSACTION = "add_transaction"
+    GET_SPENDING_SUMMARY = "get_spending_summary"
+    UNKNOWN = "unknown"
+
+class IntentModel(BaseModel):
+    type: IntentType
+    confidence: float
+    message: str | None = None
+
+class ConversationRole(Enum):
+    USER = "user"
+    ASSISTANT = "assistant"
+    SYSTEM = "system"
+
+
+class MessageModel(BaseModel):
+    conversation_id: UUID
+    role: ConversationRole = ConversationRole.USER  # TODO: ! validate that request role is always USER
+    content: str
+    timestamp: datetime.datetime
+
+
+class ConversationModel(BaseModel):
+    conversation_id: UUID
+    user_id: int
+    status: ConversationStatus
+    intent: IntentType | None = None
+    messages: list[MessageModel] = []
+    turn_count: int = 0
+    max_turns: int = 5
+    collected_data: dict[str, Any] = {}  # Stores extracted parameters
+    created_at: datetime.datetime
+    updated_at: datetime.datetime

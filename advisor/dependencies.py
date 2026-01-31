@@ -2,12 +2,19 @@ from typing import AsyncGenerator
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from advisor.data_models import IntentType
 from advisor.db.db_async_connector import DBAsyncConnector
 from advisor.llm.lite_llm_client import LiteLLMClient
 from advisor.llm.llm_service import LLMService
 from advisor.llm.prompt_manager import PromptManager
 from advisor.service.budgets_service import BudgetsService
 from advisor.service.category_service import CategoryService
+from advisor.service.conversations.intent_handlers.add_transaction_intent_handler import (
+    AddTransactionIntentHandler,
+)
+from advisor.service.conversations.intent_handlers.intent_handler_mapper import (
+    IntentHandlerMapper,
+)
 from advisor.service.finances_service import FinancesService
 from advisor.service.transactions_service import TransactionsService
 from advisor.settings import ProjectSettings
@@ -98,3 +105,10 @@ def get_db_connector() -> DBAsyncConnector:
 async def get_session() -> AsyncGenerator[AsyncSession, None]:
     async with get_db_connector().get_session() as session:
         yield session
+
+
+# Intent handlers
+def init_intent_handlers() -> None:
+    IntentHandlerMapper.register_intent_handler(
+        IntentType.ADD_TRANSACTION, AddTransactionIntentHandler(get_transactions_service())
+    )
