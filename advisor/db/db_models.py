@@ -1,4 +1,3 @@
-import uuid
 from datetime import date, datetime, timezone
 from decimal import Decimal
 from typing import Any, Optional
@@ -8,7 +7,6 @@ from sqlalchemy import (
     JSON,
     BigInteger,
     Boolean,
-    Column,
     Date,
     DateTime,
     Enum,
@@ -324,16 +322,20 @@ class Message(Base):
     external_id: Mapped[str] = mapped_column(UUID(as_uuid=True), default=uuid4, unique=True, index=True)
 
     conversation_id: Mapped[int] = mapped_column(ForeignKey("CONVERSATION.id"), nullable=False)
+    conversation: Mapped["Conversation"] = relationship(back_populates="messages")
+
     content: Mapped[str] = mapped_column(Text, nullable=False)
     role: Mapped[ConversationRole] = mapped_column(Enum(ConversationRole))
-    timestamp: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+    timestamp: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc)
+    )
 
 
 class Conversation(Base):
     __tablename__ = "CONVERSATION"
 
     id: Mapped[int] = mapped_column(BigInteger(), primary_key=True, autoincrement=True)
-    conversation_id: Mapped[str] = mapped_column(UUID(as_uuid=True), default=uuid4, unique=True, index=True)
+    conversation_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), default=uuid4, unique=True, index=True)
     # User relationship
     user_id: Mapped[int] = mapped_column(ForeignKey("USER.id"), nullable=False, index=True)
 
@@ -345,8 +347,13 @@ class Conversation(Base):
 
     collected_data: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
 
-    # TODO: ! configure proper relationship !
-    messages: Mapped[list[Message]] = mapped_column(JSON, default=list, nullable=False)
+    messages: Mapped[list[Message]] = relationship(
+        back_populates="conversation",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )
 
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc)
+    )

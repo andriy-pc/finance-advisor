@@ -187,10 +187,10 @@ class ConversationRole(Enum):
 
 
 class MessageModel(BaseModel):
-    conversation_id: UUID
+    conversation_id: UUID | None = None
     role: ConversationRole = ConversationRole.USER  # TODO: ! validate that request role is always USER
     content: str
-    timestamp: datetime.datetime
+    timestamp: datetime.datetime = datetime.datetime.now(datetime.timezone.utc)
 
 
 class ConversationModel(BaseModel):
