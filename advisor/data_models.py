@@ -173,10 +173,12 @@ class IntentType(Enum):
     GET_SPENDING_SUMMARY = "get_spending_summary"
     UNKNOWN = "unknown"
 
+
 class IntentModel(BaseModel):
     type: IntentType
     confidence: float
     message: str | None = None
+
 
 class ConversationRole(Enum):
     USER = "user"

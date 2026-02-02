@@ -123,7 +123,7 @@ class TransactionsService:
 
     @staticmethod
     def map_raw_transaction_model_to_db(raw_transaction: RawTransactionModel) -> db_models.RawTransaction:
-        return db_models.RawTransaction(**raw_transaction.to_dict())
+        return db_models.RawTransaction(**raw_transaction.model_dump())
 
     @staticmethod
     def map_normalized_transaction_to_db_model(
@@ -134,4 +134,3 @@ class TransactionsService:
     async def add_raw_transaction(self, raw_transaction: db_models.RawTransaction) -> None:
         async with self.db_connector.get_session() as session, session.begin():
             session.add(raw_transaction)
-

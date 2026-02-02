@@ -9,6 +9,9 @@ from advisor.llm.llm_service import LLMService
 from advisor.llm.prompt_manager import PromptManager
 from advisor.service.budgets_service import BudgetsService
 from advisor.service.category_service import CategoryService
+from advisor.service.conversations.conversation_orchestrator import (
+    ConversationOrchestrator,
+)
 from advisor.service.conversations.intent_handlers.add_transaction_intent_handler import (
     AddTransactionIntentHandler,
 )
@@ -17,6 +20,7 @@ from advisor.service.conversations.intent_handlers.intent_handler_mapper import 
 )
 from advisor.service.finances_service import FinancesService
 from advisor.service.transactions_service import TransactionsService
+from advisor.service.users_service import UsersService
 from advisor.settings import ProjectSettings
 
 db_connector: DBAsyncConnector | None = None
@@ -29,6 +33,22 @@ _lite_llm_client: "LiteLLMClient | None" = None
 _category_service: "CategoryService | None" = None
 _finances_service: "FinancesService | None" = None
 _budgets_service: "BudgetsService | None" = None
+_users_service: "UsersService | None" = None
+_conversation_orchestrator: "ConversationOrchestrator | None" = None
+
+
+def get_conversation_orchestrator() -> ConversationOrchestrator:
+    global _conversation_orchestrator
+    if _conversation_orchestrator is None:
+        _conversation_orchestrator = ConversationOrchestrator(get_db_connector(), get_llm_service())
+    return _conversation_orchestrator
+
+
+def get_users_service() -> UsersService:
+    global _users_service
+    if _users_service is None:
+        _users_service = UsersService(get_db_connector())
+    return _users_service
 
 
 def get_budgets_service() -> "BudgetsService":
@@ -110,5 +130,5 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
 # Intent handlers
 def init_intent_handlers() -> None:
     IntentHandlerMapper.register_intent_handler(
-        IntentType.ADD_TRANSACTION, AddTransactionIntentHandler(get_transactions_service())
+        IntentType.ADD_TRANSACTION, AddTransactionIntentHandler(get_users_service(), get_transactions_service())
     )
