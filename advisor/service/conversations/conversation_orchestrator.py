@@ -18,6 +18,9 @@ from advisor.llm.llm_service import LLMService
 from advisor.service.conversations.intent_handlers.base_intent_data import (
     BaseIntentData,
 )
+from advisor.service.conversations.intent_handlers.intent_handler_mapper import (
+    IntentHandlerMapper,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -51,15 +54,17 @@ class ConversationOrchestrator:
             return [ConversationModel(**conversation.to_dict()) for conversation in conversations]
 
     async def handle_message(self, user_id: int, message: MessageModel) -> MessageModel:
+        logger.debug(f"Handling message from user {user_id=}")
 
-        conversation = await self._load_conversation(user_id, message.conversation_id)
+        conversation: Conversation = await self._load_conversation(user_id, message.conversation_id)
         conversation.messages.append(self.map_message_model_to_db(message))
 
         intent: IntentModel = await self._define_user_intent(conversation)
+        logger.debug(f"For conversation with ID defined intent {intent.type}")
 
         if intent.type == IntentType.UNKNOWN:
             clarification_message = self._prepare_system_message(
-                UUID(conversation.conversation_id),
+                conversation.conversation_id,  # type: ignore
                 "Unsupported intent. Please view the list of supported actions and formulate your request accordingly",
             )
             conversation.messages.append(self.map_message_model_to_db(clarification_message))
@@ -72,18 +77,21 @@ class ConversationOrchestrator:
 
         intent_handler = IntentHandlerMapper.get_intent_handler(intent.type)  # type: ignore
         if intent_handler is None:
+            logger.debug(f"No intent handler for {intent.type} ({conversation.conversation_id=})")
             final_message = self._prepare_system_message(
-                UUID(conversation.conversation_id),
+                conversation.conversation_id,  # type: ignore
                 "Something went wrong and we can not process your intent. Conversation will be closed closed.",
             )
             conversation.messages.append(self.map_message_model_to_db(final_message))
             await self._update_conversation_with_status(conversation, ConversationStatus.COMPLETED_ERROR)
             return final_message
 
+        logger.debug(f"Preparing intent data for {intent.type} ({conversation.conversation_id=})")
         intent_data: BaseIntentData = await intent_handler.prepare_intent_data(conversation)
         if intent_data.clarify:
+            logger.debug(f"Need clarification on intent data for {conversation.conversation_id=} and type: {intent_data.type}")
             clarification_message = self._prepare_system_message(
-                UUID(conversation.conversation_id), intent_data.request_to_user
+                conversation.conversation_id, intent_data.request_to_user  # type: ignore
             )
             conversation.messages.append(self.map_message_model_to_db(clarification_message))
             conversation.collected_data = intent_data.extract_collected_data()
@@ -98,14 +106,14 @@ class ConversationOrchestrator:
         intent_action_result = await intent_handler.run_intent(intent_data)
         if intent_action_result.success:
             final_message = self._prepare_system_message(
-                UUID(conversation.conversation_id), "Action completed successfully. Conversation closed."
+                conversation.conversation_id, "Action completed successfully. Conversation closed."  # type: ignore
             )
             conversation.messages.append(self.map_message_model_to_db(final_message))
             await self._update_conversation_with_status(conversation, ConversationStatus.COMPLETED_SUCCESS)
             return final_message
         else:
             final_message = self._prepare_system_message(
-                UUID(conversation.conversation_id), "Action failed! Conversation closed."
+                conversation.conversation_id, "Action failed! Conversation closed."  # type: ignore
             )
             conversation.messages.append(self.map_message_model_to_db(final_message))
             await self._update_conversation_with_status(conversation, ConversationStatus.COMPLETED_ERROR)
@@ -130,16 +138,16 @@ class ConversationOrchestrator:
                 type=IntentType.UNKNOWN, confidence=1.0, message="Failed to determine intent. Please try again"
             )
 
-    async def _load_conversation(self, user_id: int, conversation_id: UUID) -> Conversation:
+    async def _load_conversation(self, user_id: int, conversation_id: UUID | None) -> Conversation:
         if conversation_id is None:
             new_conversation = Conversation(
-                user_id=user_id, status=ConversationStatus.ACTIVE, intent=None, turn_count=0
+                user_id=user_id, status=ConversationStatus.ACTIVE, intent=None, turn_count=1, messages=[]
             )
             async with self.db_connector.get_session() as session, session.begin():
                 session.add(new_conversation)
-                session.flush()
+                await session.flush()
                 session.expunge_all()
-                return new_conversation
+            return new_conversation
 
         async with self.db_connector.get_session() as session:
             conversation: Conversation | None = (

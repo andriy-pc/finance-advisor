@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from advisor.api.v1 import finances, transactions, chats
+from advisor.api.v1 import chats, finances, transactions
 
 router = APIRouter(prefix="/api/v1")
 

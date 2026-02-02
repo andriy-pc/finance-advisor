@@ -14,7 +14,7 @@ app = FastAPI(title="Finance Advisor - Personal Finance Engine", lifespan=lifesp
 
 app.include_router(router)
 
-# init_intent_handlers()
+init_intent_handlers()
 
 
 @app.get("/")
@@ -23,7 +23,6 @@ def root() -> dict[str, str]:
 
 
 if __name__ == "__main__":
-    init_intent_handlers()
-    # import uvicorn
-    #
-    # uvicorn.run(app, host="0.0.0.0", port=8000)
+    import uvicorn
+
+    uvicorn.run(app, host="0.0.0.0", port=8000)

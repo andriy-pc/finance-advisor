@@ -24,6 +24,7 @@ class AddTransactionIntentHandler(BaseIntentHandler[AddTransactionIntentData, Ad
         self.users_service = users_service
         self.transactions_service = transactions_service
 
+    # TODO: ! add exception handling !
     async def prepare_intent_data(self, conversation: Conversation) -> AddTransactionIntentData:
         messages = conversation.messages
         collected_messages = [{"role": message.role, "content": message.content} for message in messages]
