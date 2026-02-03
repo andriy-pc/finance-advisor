@@ -4,7 +4,7 @@ from enum import Enum
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import AliasPath, BaseModel, ConfigDict, Field, field_validator
 
 
 class TransactionType(str, Enum):
@@ -157,3 +157,54 @@ class FinancialStateModel(BaseModel):
     thresholds: list[BudgetThresholdModel]
 
     finance_snapshot: FinancialPeriodSnapshotModel
+
+
+class ConversationStatus(Enum):
+    ACTIVE = "active"
+    COMPLETED_SUCCESS = "completed_success"
+    COMPLETED_ERROR = "completed_error"
+    TERMINATED_OFF_TOPIC = "terminated_off_topic"
+    TERMINATED_MAX_TURNS = "terminated_max_turns"
+
+
+class IntentType(Enum):
+    EVALUATE_PURCHASE = "evaluate_purchase"
+    ADD_TRANSACTION = "add_transaction"
+    GET_SPENDING_SUMMARY = "get_spending_summary"
+    UNKNOWN = "unknown"
+
+
+class IntentModel(BaseModel):
+    type: IntentType
+    confidence: float
+    message: str | None = None
+
+
+class ConversationRole(Enum):
+    USER = "user"
+    ASSISTANT = "assistant"
+    SYSTEM = "system"
+
+
+class MessageModel(BaseModel):
+    conversation_id: UUID | None = Field(default=None, validation_alias=AliasPath("conversation", "conversation_id"))
+    role: ConversationRole = ConversationRole.USER
+    content: str
+    timestamp: datetime.datetime = datetime.datetime.now(datetime.timezone.utc)
+
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+
+class ConversationModel(BaseModel):
+    conversation_id: UUID
+    user_id: int
+    status: ConversationStatus
+    intent: IntentType | None = None
+    messages: list[MessageModel] = Field(default_factory=list)
+    turn_count: int = 0
+    max_turns: int = 5
+    collected_data: dict[str, Any] = Field(default_factory=dict)  # Stores extracted parameters
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
+
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)

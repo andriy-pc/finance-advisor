@@ -38,6 +38,7 @@ class LLMService:
         variables: dict[str, Any],
         response_model: Type[T],
         system_prompt_key: str | None = None,
+        system_variables: dict[str, Any] | None = None,
     ) -> T:
         """
         Primary method for type-safe LLM interactions.
@@ -49,6 +50,7 @@ class LLMService:
             variables: Template variables
             response_model: Pydantic model for output
             system_prompt_key: Optional system prompt key
+            system_variables: Optional system variables
 
         Returns:
             Validated Pydantic instance
@@ -73,7 +75,7 @@ class LLMService:
             # Build messages
             messages = []
             if system_prompt_key:
-                system_prompt = self._prompt_manager.render(system_prompt_key, {})
+                system_prompt = self._prompt_manager.render(system_prompt_key, system_variables or {})
                 messages.append({"role": "system", "content": system_prompt})
             messages.append({"role": "user", "content": prompt_text})
 

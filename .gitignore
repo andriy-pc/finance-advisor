@@ -13,3 +13,4 @@ wheels/
 .env
 
 .coverage
+/llm_chat_design.md
