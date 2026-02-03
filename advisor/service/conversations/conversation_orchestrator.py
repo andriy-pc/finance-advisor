@@ -50,7 +50,15 @@ class ConversationOrchestrator:
     async def get_conversations(self, user_id: int) -> list[ConversationModel]:
         async with self.db_connector.get_session() as session:
             conversations = list(
-                (await session.execute(select(Conversation).options(selectinload(Conversation.messages)).where(Conversation.user_id == user_id))).unique().scalars()
+                (
+                    await session.execute(
+                        select(Conversation)
+                        .options(selectinload(Conversation.messages))
+                        .where(Conversation.user_id == user_id)
+                    )
+                )
+                .unique()
+                .scalars()
             )
             return [ConversationModel.model_validate(conversation) for conversation in conversations]
 
@@ -89,8 +97,11 @@ class ConversationOrchestrator:
 
         logger.debug(f"Preparing intent data for {intent.type} ({conversation.conversation_id=})")
         intent_data: BaseIntentData = await intent_handler.prepare_intent_data(conversation)
-        if intent_data.clarify:
-            logger.debug(f"Need clarification on intent data for {conversation.conversation_id=} and type: {intent_data.type}")
+        if intent_data.clarify or (intent_data.confidence is not None and intent_data.confidence < 0.7):
+            # The second condition is a safe net in case LLM didn't set `clarify` field correctly
+            logger.debug(
+                f"Need clarification on intent data for {conversation.conversation_id=} and type: {intent.type}"
+            )
             clarification_message = self._prepare_system_message(
                 conversation.conversation_id, intent_data.request_to_user  # type: ignore
             )
@@ -99,17 +110,13 @@ class ConversationOrchestrator:
             await self._update_conversation_with_status(conversation, ConversationStatus.ACTIVE)
             return clarification_message
 
-        # TODO: ! prompt already says that if confidence is < 0.7 - do clarification
-        if intent_data.confidence is not None and intent_data.confidence < 0.7:
-            # Ask user to confirm the intent
-            pass
-
         intent_action_result = await intent_handler.run_intent(user_id, intent_data)
         if intent_action_result.success:
             final_message = self._prepare_system_message(
-                conversation.conversation_id, "Action completed successfully. Conversation closed."  # type: ignore
+                conversation.conversation_id, intent_handler.get_success_final_message()  # type: ignore
             )
             conversation.messages.append(self.map_message_model_to_db(final_message))
+            conversation.collected_data = intent_data.extract_collected_data()
             await self._update_conversation_with_status(conversation, ConversationStatus.COMPLETED_SUCCESS)
             return final_message
         else:
@@ -117,6 +124,7 @@ class ConversationOrchestrator:
                 conversation.conversation_id, "Action failed! Conversation closed."  # type: ignore
             )
             conversation.messages.append(self.map_message_model_to_db(final_message))
+            conversation.collected_data = intent_data.extract_collected_data()
             await self._update_conversation_with_status(conversation, ConversationStatus.COMPLETED_ERROR)
             return final_message
 
@@ -140,33 +148,35 @@ class ConversationOrchestrator:
             )
 
     async def _load_conversation(self, user_id: int, conversation_id: UUID | None) -> Conversation:
-        if conversation_id is None:
-            new_conversation = Conversation(
-                user_id=user_id, status=ConversationStatus.ACTIVE, intent=None, turn_count=0, messages=[]
-            )
-            async with self.db_connector.get_session() as session, session.begin():
-                session.add(new_conversation)
-                await session.flush()
-                session.expunge_all()
-            return new_conversation
-
-        async with self.db_connector.get_session() as session:
-            conversation: Conversation | None = (
-                await session.execute(
-                    select(Conversation).where(
-                        Conversation.user_id == user_id, Conversation.conversation_id == conversation_id
+        if conversation_id is not None:
+            async with self.db_connector.get_session() as session:
+                conversation: Conversation | None = (
+                    await session.execute(
+                        select(Conversation)
+                        .options(selectinload(Conversation.messages))
+                        .where(
+                            Conversation.user_id == user_id,
+                            Conversation.conversation_id == conversation_id,
+                            Conversation.status == ConversationStatus.ACTIVE,
+                            Conversation.turn_count < Conversation.max_turns,
+                        )
                     )
-                )
-            ).scalar_one_or_none()
+                ).scalar_one_or_none()
 
-            if (
-                conversation is None
-                or conversation.status != ConversationStatus.ACTIVE
-                or conversation.turn_count >= conversation.max_turns
-            ):
-                raise ValueError("")  # TODO: !
+        if conversation is None:
+            return await self._create_new_conversation(user_id)
 
         return conversation
+
+    async def _create_new_conversation(self, user_id: int) -> Conversation:
+        new_conversation = Conversation(
+            user_id=user_id, status=ConversationStatus.ACTIVE, intent=None, turn_count=0, messages=[]
+        )
+        async with self.db_connector.get_session() as session, session.begin():
+            session.add(new_conversation)
+            await session.flush()
+            session.expunge_all()
+        return new_conversation
 
     async def _update_conversation_with_status(self, conversation: Conversation, status: ConversationStatus) -> None:
         conversation.status = status

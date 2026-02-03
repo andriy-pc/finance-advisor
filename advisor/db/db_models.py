@@ -351,6 +351,7 @@ class Conversation(Base):
         back_populates="conversation",
         cascade="all, delete-orphan",
         lazy="selectin",
+        order_by="Message.timestamp",
     )
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))

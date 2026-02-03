@@ -39,7 +39,7 @@ class AddTransactionIntentHandler(BaseIntentHandler[AddTransactionIntentData, Ad
             "prepare_add_transaction_intent_data_system",
             {
                 "current_date": datetime.now(timezone.utc).isoformat(),
-                "default_currency": self.users_service.get_default_currency(),
+                "default_currency": await self.users_service.get_default_currency(),
                 "collected_data": conversation.collected_data,
             },
         )
@@ -54,7 +54,9 @@ class AddTransactionIntentHandler(BaseIntentHandler[AddTransactionIntentData, Ad
                 request_to_user=f"Some fields have invalid values. Please refer to this list of errors: {json.dumps(validation_errors)}",
             )
 
-    async def run_intent(self, user_id: int, intent_action_data: AddTransactionIntentData) -> AddTransactionIntentResult:
+    async def run_intent(
+        self, user_id: int, intent_action_data: AddTransactionIntentData
+    ) -> AddTransactionIntentResult:
         try:
             currency = intent_action_data.currency
             if currency is None:
@@ -82,6 +84,9 @@ class AddTransactionIntentHandler(BaseIntentHandler[AddTransactionIntentData, Ad
                 success=False,
                 message="Failed to add a raw transaction. Please try adding via in the `Transactions` tab ",
             )
+
+    def get_success_final_message(self) -> str:
+        return "Transaction was added successfully!"
 
     @staticmethod
     def _validate_raw_transaction_data(add_transaction_intent_data: AddTransactionIntentData) -> list[str]:
