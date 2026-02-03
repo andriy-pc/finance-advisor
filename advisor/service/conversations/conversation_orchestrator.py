@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 from uuid import UUID
 
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 
 from advisor.data_models import (
     ConversationModel,
@@ -49,9 +50,9 @@ class ConversationOrchestrator:
     async def get_conversations(self, user_id: int) -> list[ConversationModel]:
         async with self.db_connector.get_session() as session:
             conversations = list(
-                (await session.execute(select(Conversation).where(Conversation.user_id == user_id))).scalars()
+                (await session.execute(select(Conversation).options(selectinload(Conversation.messages)).where(Conversation.user_id == user_id))).unique().scalars()
             )
-            return [ConversationModel(**conversation.to_dict()) for conversation in conversations]
+            return [ConversationModel.model_validate(conversation) for conversation in conversations]
 
     async def handle_message(self, user_id: int, message: MessageModel) -> MessageModel:
         logger.debug(f"Handling message from user {user_id=}")
@@ -103,7 +104,7 @@ class ConversationOrchestrator:
             # Ask user to confirm the intent
             pass
 
-        intent_action_result = await intent_handler.run_intent(intent_data)
+        intent_action_result = await intent_handler.run_intent(user_id, intent_data)
         if intent_action_result.success:
             final_message = self._prepare_system_message(
                 conversation.conversation_id, "Action completed successfully. Conversation closed."  # type: ignore
@@ -141,7 +142,7 @@ class ConversationOrchestrator:
     async def _load_conversation(self, user_id: int, conversation_id: UUID | None) -> Conversation:
         if conversation_id is None:
             new_conversation = Conversation(
-                user_id=user_id, status=ConversationStatus.ACTIVE, intent=None, turn_count=1, messages=[]
+                user_id=user_id, status=ConversationStatus.ACTIVE, intent=None, turn_count=0, messages=[]
             )
             async with self.db_connector.get_session() as session, session.begin():
                 session.add(new_conversation)

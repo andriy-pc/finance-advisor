@@ -43,8 +43,10 @@ class AddTransactionIntentHandler(BaseIntentHandler[AddTransactionIntentData, Ad
                 "collected_data": conversation.collected_data,
             },
         )
-        validation_errors = self._is_raw_transaction_data_valid(add_transaction_intent_data)
+        validation_errors = self._validate_raw_transaction_data(add_transaction_intent_data)
         if not validation_errors:
+            if add_transaction_intent_data.use_current_date:
+                add_transaction_intent_data.date = datetime.now(timezone.utc).date()
             return add_transaction_intent_data
         else:
             return AddTransactionIntentData(
@@ -52,15 +54,20 @@ class AddTransactionIntentHandler(BaseIntentHandler[AddTransactionIntentData, Ad
                 request_to_user=f"Some fields have invalid values. Please refer to this list of errors: {json.dumps(validation_errors)}",
             )
 
-    async def run_intent(self, intent_action_data: AddTransactionIntentData) -> AddTransactionIntentResult:
+    async def run_intent(self, user_id: int, intent_action_data: AddTransactionIntentData) -> AddTransactionIntentResult:
         try:
+            currency = intent_action_data.currency
+            if currency is None:
+                currency = await self.users_service.get_default_currency()
             raw_transaction = RawTransaction(
                 source="manual",
                 type=intent_action_data.type,
                 description=intent_action_data.description,
                 raw_category=intent_action_data.raw_category,
                 amount=intent_action_data.amount,
-                currency=intent_action_data.currency,
+                currency=currency,
+                user_id=user_id,
+                raw_data=intent_action_data.extract_collected_data(),
             )
             if intent_action_data.use_current_date:
                 raw_transaction.date = datetime.now(timezone.utc).date()
@@ -77,6 +84,6 @@ class AddTransactionIntentHandler(BaseIntentHandler[AddTransactionIntentData, Ad
             )
 
     @staticmethod
-    def _is_raw_transaction_data_valid(add_transaction_intent_data: AddTransactionIntentData) -> bool:
+    def _validate_raw_transaction_data(add_transaction_intent_data: AddTransactionIntentData) -> list[str]:
         # TODO: ! implement proper validation
-        return True
+        return []
