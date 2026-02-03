@@ -24,7 +24,6 @@ class AddTransactionIntentHandler(BaseIntentHandler[AddTransactionIntentData, Ad
         self.users_service = users_service
         self.transactions_service = transactions_service
 
-    # TODO: ! add exception handling !
     async def prepare_intent_data(self, conversation: Conversation) -> AddTransactionIntentData:
         messages = conversation.messages
         collected_messages = [{"role": message.role, "content": message.content} for message in messages]
@@ -39,7 +38,7 @@ class AddTransactionIntentHandler(BaseIntentHandler[AddTransactionIntentData, Ad
             "prepare_add_transaction_intent_data_system",
             {
                 "current_date": datetime.now(timezone.utc).isoformat(),
-                "default_currency": await self.users_service.get_default_currency(),
+                "default_currency": await self.users_service.get_default_currency(conversation.user_id),
                 "collected_data": conversation.collected_data,
             },
         )
@@ -60,7 +59,7 @@ class AddTransactionIntentHandler(BaseIntentHandler[AddTransactionIntentData, Ad
         try:
             currency = intent_action_data.currency
             if currency is None:
-                currency = await self.users_service.get_default_currency()
+                currency = await self.users_service.get_default_currency(user_id)
             raw_transaction = RawTransaction(
                 source="manual",
                 type=intent_action_data.type,

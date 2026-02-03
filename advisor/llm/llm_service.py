@@ -1,16 +1,17 @@
 import asyncio
 import time
-from typing import Any, Type
+from typing import Any, Type, TypeVar
 
 import tiktoken
+from pydantic import BaseModel
 
 from advisor.llm.lite_llm_client import LiteLLMClient
-from advisor.llm.llm_output_parser import T
 from advisor.llm.metrics_collector import MetricsCollector
 from advisor.llm.prompt_manager import PromptManager
 
+T = TypeVar("T", bound=BaseModel)
 
-# TODO: ! add method to use direct prompt (instead of using prompt manager)
+
 class LLMService:
     """
     Orchestration layer for LLM operations.
