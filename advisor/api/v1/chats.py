@@ -1,9 +1,9 @@
 import logging
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 
-from advisor.data_models import MessageModel
+from advisor.data_models import ConversationRole, MessageModel
 from advisor.dependencies import get_conversation_orchestrator
 from advisor.service.conversations.conversation_orchestrator import (
     ConversationOrchestrator,
@@ -30,6 +30,17 @@ async def handle_user_message(
     message: MessageModel,
     conversation_orchestrator: Annotated[ConversationOrchestrator, Depends(get_conversation_orchestrator)],
 ) -> dict[str, Any]:
+    if message.role != ConversationRole.USER:
+        raise HTTPException(status_code=400, detail="Invalid message role")
+
     response_message = await conversation_orchestrator.handle_message(extract_user_id(), message)
 
     return response_message.model_dump()
+
+
+@chats_router.get("")
+async def get_all_chats(
+    conversation_orchestrator: Annotated[ConversationOrchestrator, Depends(get_conversation_orchestrator)],
+) -> list[dict[str, Any]]:
+    chats = await conversation_orchestrator.get_conversations(extract_user_id())
+    return [chat.model_dump() for chat in chats]

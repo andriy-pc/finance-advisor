@@ -4,7 +4,7 @@ from enum import Enum
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import AliasPath, BaseModel, ConfigDict, Field, field_validator
 
 
 class TransactionType(str, Enum):
@@ -187,10 +187,12 @@ class ConversationRole(Enum):
 
 
 class MessageModel(BaseModel):
-    conversation_id: UUID | None = None
-    role: ConversationRole = ConversationRole.USER  # TODO: ! validate that request role is always USER
+    conversation_id: UUID | None = Field(default=None, validation_alias=AliasPath("conversation", "conversation_id"))
+    role: ConversationRole = ConversationRole.USER
     content: str
     timestamp: datetime.datetime = datetime.datetime.now(datetime.timezone.utc)
+
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
 
 class ConversationModel(BaseModel):
@@ -198,9 +200,11 @@ class ConversationModel(BaseModel):
     user_id: int
     status: ConversationStatus
     intent: IntentType | None = None
-    messages: list[MessageModel] = []
+    messages: list[MessageModel] = Field(default_factory=list)
     turn_count: int = 0
     max_turns: int = 5
-    collected_data: dict[str, Any] = {}  # Stores extracted parameters
+    collected_data: dict[str, Any] = Field(default_factory=dict)  # Stores extracted parameters
     created_at: datetime.datetime
     updated_at: datetime.datetime
+
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
