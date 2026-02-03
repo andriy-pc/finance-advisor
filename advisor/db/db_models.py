@@ -1,3 +1,4 @@
+import uuid
 from datetime import date, datetime, timezone
 from decimal import Decimal
 from typing import Any, Optional
@@ -335,7 +336,7 @@ class Conversation(Base):
     __tablename__ = "CONVERSATION"
 
     id: Mapped[int] = mapped_column(BigInteger(), primary_key=True, autoincrement=True)
-    conversation_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), default=uuid4, unique=True, index=True)
+    conversation_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), default=uuid4, unique=True, index=True)
     # User relationship
     user_id: Mapped[int] = mapped_column(ForeignKey("USER.id"), nullable=False, index=True)
 

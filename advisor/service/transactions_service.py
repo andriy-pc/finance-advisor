@@ -135,6 +135,8 @@ class TransactionsService:
     async def add_raw_transaction(self, raw_transaction: db_models.RawTransaction) -> None:
         async with self.db_connector.get_session() as session, session.begin():
             session.add(raw_transaction)
+            await session.flush()
+            session.expunge(raw_transaction)
 
         # Run transactions post-processing in the background
         await asyncio.create_task(self.transactions_post_process(raw_transaction.user_id))

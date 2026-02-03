@@ -15,4 +15,4 @@ class UsersService:
 
     async def get_default_currency(self, user_id: int) -> str:
         async with self.db_connector.get_session() as session:
-            return (await session.execute(select(User.default_currency).where(User.id == user_id))).scalar()
+            return str((await session.execute(select(User.default_currency).where(User.id == user_id))).scalar())

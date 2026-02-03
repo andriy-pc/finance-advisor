@@ -1,6 +1,6 @@
-from pydantic import BaseModel
+from advisor.service.conversations.intent_handlers.base_intent_result import (
+    BaseIntentResult,
+)
 
 
-class AddTransactionIntentResult(BaseModel):
-    success: bool
-    message: str | None = None
+class AddTransactionIntentResult(BaseIntentResult): ...

@@ -2,9 +2,15 @@ import abc
 from typing import TypeVar
 
 from advisor.db.db_models import Conversation
+from advisor.service.conversations.intent_handlers.base_intent_data import (
+    BaseIntentData,
+)
+from advisor.service.conversations.intent_handlers.base_intent_result import (
+    BaseIntentResult,
+)
 
-I = TypeVar("I")  # Intent action data
-R = TypeVar("R")  # Intent action result
+I = TypeVar("I", bound=BaseIntentData)  # Intent action data
+R = TypeVar("R", bound=BaseIntentResult)  # Intent action result
 
 
 class BaseIntentHandler[I, R](abc.ABC):

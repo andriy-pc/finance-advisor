@@ -4,12 +4,14 @@ from datetime import datetime, timezone
 
 from advisor.data_models import IntentType
 from advisor.db.db_models import Conversation, RawTransaction
-from advisor.service.conversations.base_intent_handler import BaseIntentHandler
 from advisor.service.conversations.intent_handlers.add_transaction_intent_data import (
     AddTransactionIntentData,
 )
 from advisor.service.conversations.intent_handlers.add_transaction_intent_result import (
     AddTransactionIntentResult,
+)
+from advisor.service.conversations.intent_handlers.base_intent_handler import (
+    BaseIntentHandler,
 )
 from advisor.service.transactions_service import TransactionsService
 from advisor.service.users_service import UsersService

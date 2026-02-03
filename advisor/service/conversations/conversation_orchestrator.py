@@ -73,7 +73,7 @@ class ConversationOrchestrator:
 
         if intent.type == IntentType.UNKNOWN:
             clarification_message = self._prepare_system_message(
-                conversation.conversation_id,  # type: ignore
+                conversation.conversation_id,
                 "Unsupported intent. Please view the list of supported actions and formulate your request accordingly",
             )
             conversation.messages.append(self.map_message_model_to_db(clarification_message))
@@ -88,7 +88,7 @@ class ConversationOrchestrator:
         if intent_handler is None:
             logger.debug(f"No intent handler for {intent.type} ({conversation.conversation_id=})")
             final_message = self._prepare_system_message(
-                conversation.conversation_id,  # type: ignore
+                conversation.conversation_id,
                 "Something went wrong and we can not process your intent. Conversation will be closed closed.",
             )
             conversation.messages.append(self.map_message_model_to_db(final_message))
@@ -103,7 +103,7 @@ class ConversationOrchestrator:
                 f"Need clarification on intent data for {conversation.conversation_id=} and type: {intent.type}"
             )
             clarification_message = self._prepare_system_message(
-                conversation.conversation_id, intent_data.request_to_user  # type: ignore
+                conversation.conversation_id, intent_data.request_to_user
             )
             conversation.messages.append(self.map_message_model_to_db(clarification_message))
             conversation.collected_data = intent_data.extract_collected_data()
@@ -113,7 +113,7 @@ class ConversationOrchestrator:
         intent_action_result = await intent_handler.run_intent(user_id, intent_data)
         if intent_action_result.success:
             final_message = self._prepare_system_message(
-                conversation.conversation_id, intent_handler.get_success_final_message()  # type: ignore
+                conversation.conversation_id, intent_handler.get_success_final_message()
             )
             conversation.messages.append(self.map_message_model_to_db(final_message))
             conversation.collected_data = intent_data.extract_collected_data()
@@ -121,7 +121,7 @@ class ConversationOrchestrator:
             return final_message
         else:
             final_message = self._prepare_system_message(
-                conversation.conversation_id, "Action failed! Conversation closed."  # type: ignore
+                conversation.conversation_id, "Action failed! Conversation closed."
             )
             conversation.messages.append(self.map_message_model_to_db(final_message))
             conversation.collected_data = intent_data.extract_collected_data()
